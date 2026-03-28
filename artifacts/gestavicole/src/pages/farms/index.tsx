@@ -1,0 +1,125 @@
+import React, { useState } from "react";
+import { AppLayout } from "@/components/layout/app-layout";
+import { useListFarms, useCreateFarm } from "@workspace/api-client-react";
+import { MapPin, Users, Tractor, Plus, Loader2 } from "lucide-react";
+import { format } from "date-fns";
+
+export default function Farms() {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const { data: farmsData, isLoading, refetch } = useListFarms({ limit: 50 });
+  
+  return (
+    <AppLayout>
+      <div className="flex justify-between items-center mb-8">
+        <div>
+          <h1 className="text-3xl font-display font-bold text-slate-900">Fermes</h1>
+          <p className="text-slate-500 mt-1">Gérez vos sites d'exploitation</p>
+        </div>
+        <button 
+          onClick={() => setIsModalOpen(true)}
+          className="flex items-center gap-2 bg-primary hover:bg-emerald-600 text-white px-4 py-2.5 rounded-xl font-medium shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5"
+        >
+          <Plus className="w-5 h-5" /> Ajouter
+        </button>
+      </div>
+
+      {isLoading ? (
+        <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+          {farmsData?.data.map((farm) => (
+            <div key={farm.id} className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm hover:shadow-xl hover:border-primary/30 transition-all duration-300 group">
+              <div className="w-12 h-12 rounded-xl bg-emerald-50 text-primary flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                <Tractor className="w-6 h-6" />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 mb-2">{farm.name}</h3>
+              
+              <div className="space-y-2 mt-4">
+                <div className="flex items-center gap-3 text-slate-600 text-sm">
+                  <MapPin className="w-4 h-4 text-slate-400" />
+                  {farm.location}
+                </div>
+                <div className="flex items-center gap-3 text-slate-600 text-sm">
+                  <Users className="w-4 h-4 text-slate-400" />
+                  Capacité: {farm.capacity.toLocaleString()}
+                </div>
+              </div>
+              
+              <div className="mt-6 pt-6 border-t border-slate-100 flex justify-between items-center">
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-slate-800">{farm.buildingsCount}</p>
+                  <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Bâtiments</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-indigo-600">{farm.activeBatchesCount}</p>
+                  <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Lots actifs</p>
+                </div>
+              </div>
+            </div>
+          ))}
+          {(!farmsData?.data || farmsData.data.length === 0) && (
+            <div className="col-span-full py-16 text-center bg-white rounded-2xl border border-dashed border-slate-300">
+              <Tractor className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+              <p className="text-slate-500 font-medium">Aucune ferme trouvée</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {isModalOpen && <CreateFarmModal onClose={() => setIsModalOpen(false)} onSuccess={refetch} />}
+    </AppLayout>
+  );
+}
+
+function CreateFarmModal({ onClose, onSuccess }: { onClose: () => void, onSuccess: () => void }) {
+  const [formData, setFormData] = useState({ name: "", location: "", capacity: "" });
+  const createMutation = useCreateFarm();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await createMutation.mutateAsync({
+        data: {
+          name: formData.name,
+          location: formData.location,
+          capacity: parseInt(formData.capacity, 10),
+        }
+      });
+      onSuccess();
+      onClose();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
+        <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
+          <h2 className="text-lg font-bold text-slate-900">Nouvelle Ferme</h2>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600">&times;</button>
+        </div>
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Nom de la ferme</label>
+            <input required type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Localisation</label>
+            <input required type="text" value={formData.location} onChange={e => setFormData({...formData, location: e.target.value})} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Capacité totale</label>
+            <input required type="number" min="1" value={formData.capacity} onChange={e => setFormData({...formData, capacity: e.target.value})} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" />
+          </div>
+          <div className="pt-4 flex justify-end gap-3">
+            <button type="button" onClick={onClose} className="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-100 font-medium">Annuler</button>
+            <button type="submit" disabled={createMutation.isPending} className="px-6 py-2 rounded-xl bg-primary hover:bg-emerald-600 text-white font-medium shadow-md shadow-primary/20 disabled:opacity-50">
+              {createMutation.isPending ? "Création..." : "Créer la ferme"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}

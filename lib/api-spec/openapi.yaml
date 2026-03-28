@@ -1,22 +1,44 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: GESTAVICOLE SaaS API - Gestion avicole multi-tenant
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication operations
+  - name: users
+    description: User management
+  - name: farms
+    description: Farm management
+  - name: buildings
+    description: Building management
+  - name: batches
+    description: Batch management
+  - name: dailyRecords
+    description: Daily records
+  - name: sales
+    description: Sales management
+  - name: stock
+    description: Stock management
+  - name: expenses
+    description: Expense management
+  - name: veterinary
+    description: Veterinary records
+  - name: dashboard
+    description: Dashboard analytics
+  - name: audit
+    description: Audit logs
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,7 +46,768 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Login user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current user
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Current user info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Logout user
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Logout successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  /users:
+    get:
+      operationId: listUsers
+      tags: [users]
+      summary: List users in tenant
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: role
+          in: query
+          schema:
+            $ref: "#/components/schemas/UserRole"
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: List of users
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserListResponse"
+    post:
+      operationId: createUser
+      tags: [users]
+      summary: Create a new user
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateUserRequest"
+      responses:
+        "201":
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /users/{userId}:
+    get:
+      operationId: getUser
+      tags: [users]
+      summary: Get user by ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: User details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+    put:
+      operationId: updateUser
+      tags: [users]
+      summary: Update user
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUserRequest"
+      responses:
+        "200":
+          description: User updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+    delete:
+      operationId: deleteUser
+      tags: [users]
+      summary: Delete user (soft delete)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: User deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  /farms:
+    get:
+      operationId: listFarms
+      tags: [farms]
+      summary: List farms in tenant
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: List of farms
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FarmListResponse"
+    post:
+      operationId: createFarm
+      tags: [farms]
+      summary: Create a farm
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateFarmRequest"
+      responses:
+        "201":
+          description: Farm created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Farm"
+
+  /farms/{farmId}:
+    get:
+      operationId: getFarm
+      tags: [farms]
+      summary: Get farm by ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: farmId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Farm details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Farm"
+    put:
+      operationId: updateFarm
+      tags: [farms]
+      summary: Update farm
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: farmId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateFarmRequest"
+      responses:
+        "200":
+          description: Farm updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Farm"
+    delete:
+      operationId: deleteFarm
+      tags: [farms]
+      summary: Delete farm
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: farmId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Farm deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  /farms/{farmId}/buildings:
+    get:
+      operationId: listBuildings
+      tags: [buildings]
+      summary: List buildings in a farm
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: farmId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of buildings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BuildingListResponse"
+    post:
+      operationId: createBuilding
+      tags: [buildings]
+      summary: Create a building
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: farmId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateBuildingRequest"
+      responses:
+        "201":
+          description: Building created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Building"
+
+  /batches:
+    get:
+      operationId: listBatches
+      tags: [batches]
+      summary: List batches in tenant
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: farmId
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/BatchStatus"
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: List of batches
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BatchListResponse"
+    post:
+      operationId: createBatch
+      tags: [batches]
+      summary: Create a batch
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateBatchRequest"
+      responses:
+        "201":
+          description: Batch created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Batch"
+
+  /batches/{batchId}:
+    get:
+      operationId: getBatch
+      tags: [batches]
+      summary: Get batch by ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: batchId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Batch details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Batch"
+    put:
+      operationId: updateBatch
+      tags: [batches]
+      summary: Update batch
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: batchId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateBatchRequest"
+      responses:
+        "200":
+          description: Batch updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Batch"
+
+  /batches/{batchId}/daily-records:
+    get:
+      operationId: listDailyRecords
+      tags: [dailyRecords]
+      summary: List daily records for a batch
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: batchId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: List of daily records
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DailyRecordListResponse"
+    post:
+      operationId: createDailyRecord
+      tags: [dailyRecords]
+      summary: Create a daily record
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: batchId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateDailyRecordRequest"
+      responses:
+        "201":
+          description: Daily record created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DailyRecord"
+
+  /sales:
+    get:
+      operationId: listSales
+      tags: [sales]
+      summary: List sales in tenant
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: List of sales
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SaleListResponse"
+    post:
+      operationId: createSale
+      tags: [sales]
+      summary: Create a sale
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSaleRequest"
+      responses:
+        "201":
+          description: Sale created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Sale"
+
+  /stock:
+    get:
+      operationId: listStock
+      tags: [stock]
+      summary: List stock items in tenant
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: category
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: List of stock items
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StockListResponse"
+    post:
+      operationId: createStockItem
+      tags: [stock]
+      summary: Create a stock item
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateStockRequest"
+      responses:
+        "201":
+          description: Stock item created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Stock"
+
+  /expenses:
+    get:
+      operationId: listExpenses
+      tags: [expenses]
+      summary: List expenses in tenant
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: category
+          in: query
+          schema:
+            type: string
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: List of expenses
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExpenseListResponse"
+    post:
+      operationId: createExpense
+      tags: [expenses]
+      summary: Create an expense
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateExpenseRequest"
+      responses:
+        "201":
+          description: Expense created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Expense"
+
+  /batches/{batchId}/veterinary-records:
+    get:
+      operationId: listVeterinaryRecords
+      tags: [veterinary]
+      summary: List veterinary records for a batch
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: batchId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of veterinary records
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VeterinaryRecordListResponse"
+    post:
+      operationId: createVeterinaryRecord
+      tags: [veterinary]
+      summary: Create a veterinary record
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: batchId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateVeterinaryRecordRequest"
+      responses:
+        "201":
+          description: Veterinary record created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VeterinaryRecord"
+
+  /dashboard/stats:
+    get:
+      operationId: getDashboardStats
+      tags: [dashboard]
+      summary: Get dashboard statistics
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Dashboard stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardStats"
+
+  /audit-logs:
+    get:
+      operationId: listAuditLogs
+      tags: [audit]
+      summary: List audit logs
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: entity
+          in: query
+          schema:
+            type: string
+        - name: userId
+          in: query
+          schema:
+            type: string
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+      responses:
+        "200":
+          description: List of audit logs
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuditLogListResponse"
+
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
   schemas:
     HealthStatus:
       type: object
@@ -34,3 +817,944 @@ components:
       required:
         - status
 
+    ErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        code:
+          type: string
+      required:
+        - message
+
+    MessageResponse:
+      type: object
+      properties:
+        message:
+          type: string
+      required:
+        - message
+
+    UserRole:
+      type: string
+      enum:
+        - SUPER_ADMIN
+        - ADMIN
+        - CHEF_FERME
+        - OUVRIER
+        - VETERINAIRE
+        - COMPTABLE
+
+    BatchStatus:
+      type: string
+      enum:
+        - ACTIF
+        - TERMINE
+        - EN_ATTENTE
+
+    LoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+      required:
+        - email
+        - password
+
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        user:
+          $ref: "#/components/schemas/UserProfile"
+      required:
+        - token
+        - user
+
+    UserProfile:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        name:
+          type: string
+        role:
+          $ref: "#/components/schemas/UserRole"
+        tenantId:
+          type: string
+        tenantName:
+          type: string
+        permissions:
+          type: array
+          items:
+            type: string
+      required:
+        - id
+        - email
+        - name
+        - role
+        - tenantId
+        - tenantName
+        - permissions
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        name:
+          type: string
+        role:
+          $ref: "#/components/schemas/UserRole"
+        tenantId:
+          type: string
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - email
+        - name
+        - role
+        - tenantId
+        - isActive
+        - createdAt
+        - updatedAt
+
+    CreateUserRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+        password:
+          type: string
+        role:
+          $ref: "#/components/schemas/UserRole"
+      required:
+        - email
+        - name
+        - password
+        - role
+
+    UpdateUserRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        role:
+          $ref: "#/components/schemas/UserRole"
+        isActive:
+          type: boolean
+
+    UserListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/User"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+      required:
+        - data
+        - total
+        - page
+        - limit
+
+    Farm:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        location:
+          type: string
+        capacity:
+          type: integer
+        tenantId:
+          type: string
+        managerId:
+          type: string
+          nullable: true
+        managerName:
+          type: string
+          nullable: true
+        buildingsCount:
+          type: integer
+        activeBatchesCount:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - location
+        - capacity
+        - tenantId
+        - buildingsCount
+        - activeBatchesCount
+        - createdAt
+
+    CreateFarmRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        location:
+          type: string
+        capacity:
+          type: integer
+        managerId:
+          type: string
+      required:
+        - name
+        - location
+        - capacity
+
+    UpdateFarmRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        location:
+          type: string
+        capacity:
+          type: integer
+        managerId:
+          type: string
+
+    FarmListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Farm"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+      required:
+        - data
+        - total
+        - page
+        - limit
+
+    Building:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        farmId:
+          type: string
+        type:
+          type: string
+        capacity:
+          type: integer
+        currentOccupancy:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - farmId
+        - type
+        - capacity
+        - currentOccupancy
+        - createdAt
+
+    CreateBuildingRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        type:
+          type: string
+        capacity:
+          type: integer
+      required:
+        - name
+        - type
+        - capacity
+
+    BuildingListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Building"
+        total:
+          type: integer
+      required:
+        - data
+        - total
+
+    Batch:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        farmId:
+          type: string
+        farmName:
+          type: string
+        buildingId:
+          type: string
+          nullable: true
+        species:
+          type: string
+        initialCount:
+          type: integer
+        currentCount:
+          type: integer
+        status:
+          $ref: "#/components/schemas/BatchStatus"
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+          nullable: true
+        mortalityRate:
+          type: number
+          format: float
+        tenantId:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - farmId
+        - farmName
+        - species
+        - initialCount
+        - currentCount
+        - status
+        - startDate
+        - mortalityRate
+        - tenantId
+        - createdAt
+
+    CreateBatchRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        farmId:
+          type: string
+        buildingId:
+          type: string
+        species:
+          type: string
+        initialCount:
+          type: integer
+        startDate:
+          type: string
+          format: date
+      required:
+        - name
+        - farmId
+        - species
+        - initialCount
+        - startDate
+
+    UpdateBatchRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        status:
+          $ref: "#/components/schemas/BatchStatus"
+        endDate:
+          type: string
+          format: date
+
+    BatchListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Batch"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+      required:
+        - data
+        - total
+        - page
+        - limit
+
+    DailyRecord:
+      type: object
+      properties:
+        id:
+          type: string
+        batchId:
+          type: string
+        date:
+          type: string
+          format: date
+        mortality:
+          type: integer
+        feedConsumption:
+          type: number
+          format: float
+        waterConsumption:
+          type: number
+          format: float
+        averageWeight:
+          type: number
+          format: float
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        recordedBy:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - batchId
+        - date
+        - mortality
+        - feedConsumption
+        - waterConsumption
+        - recordedBy
+        - createdAt
+
+    CreateDailyRecordRequest:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        mortality:
+          type: integer
+        feedConsumption:
+          type: number
+          format: float
+        waterConsumption:
+          type: number
+          format: float
+        averageWeight:
+          type: number
+          format: float
+        notes:
+          type: string
+      required:
+        - date
+        - mortality
+        - feedConsumption
+        - waterConsumption
+
+    DailyRecordListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/DailyRecord"
+        total:
+          type: integer
+      required:
+        - data
+        - total
+
+    Sale:
+      type: object
+      properties:
+        id:
+          type: string
+        batchId:
+          type: string
+          nullable: true
+        batchName:
+          type: string
+          nullable: true
+        quantity:
+          type: integer
+        unitPrice:
+          type: number
+          format: float
+        totalAmount:
+          type: number
+          format: float
+        buyerName:
+          type: string
+        saleDate:
+          type: string
+          format: date
+        type:
+          type: string
+        notes:
+          type: string
+          nullable: true
+        tenantId:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - quantity
+        - unitPrice
+        - totalAmount
+        - buyerName
+        - saleDate
+        - type
+        - tenantId
+        - createdAt
+
+    CreateSaleRequest:
+      type: object
+      properties:
+        batchId:
+          type: string
+        quantity:
+          type: integer
+        unitPrice:
+          type: number
+          format: float
+        buyerName:
+          type: string
+        saleDate:
+          type: string
+          format: date
+        type:
+          type: string
+        notes:
+          type: string
+      required:
+        - quantity
+        - unitPrice
+        - buyerName
+        - saleDate
+        - type
+
+    SaleListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Sale"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+        totalAmount:
+          type: number
+          format: float
+      required:
+        - data
+        - total
+        - page
+        - limit
+        - totalAmount
+
+    Stock:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        category:
+          type: string
+        quantity:
+          type: number
+          format: float
+        unit:
+          type: string
+        minimumLevel:
+          type: number
+          format: float
+        currentValue:
+          type: number
+          format: float
+        tenantId:
+          type: string
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - category
+        - quantity
+        - unit
+        - minimumLevel
+        - currentValue
+        - tenantId
+        - updatedAt
+
+    CreateStockRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        category:
+          type: string
+        quantity:
+          type: number
+          format: float
+        unit:
+          type: string
+        minimumLevel:
+          type: number
+          format: float
+        unitPrice:
+          type: number
+          format: float
+      required:
+        - name
+        - category
+        - quantity
+        - unit
+        - minimumLevel
+        - unitPrice
+
+    StockListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Stock"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+        lowStockCount:
+          type: integer
+      required:
+        - data
+        - total
+        - page
+        - limit
+        - lowStockCount
+
+    Expense:
+      type: object
+      properties:
+        id:
+          type: string
+        category:
+          type: string
+        description:
+          type: string
+        amount:
+          type: number
+          format: float
+        date:
+          type: string
+          format: date
+        batchId:
+          type: string
+          nullable: true
+        farmId:
+          type: string
+          nullable: true
+        tenantId:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - category
+        - description
+        - amount
+        - date
+        - tenantId
+        - createdAt
+
+    CreateExpenseRequest:
+      type: object
+      properties:
+        category:
+          type: string
+        description:
+          type: string
+        amount:
+          type: number
+          format: float
+        date:
+          type: string
+          format: date
+        batchId:
+          type: string
+        farmId:
+          type: string
+      required:
+        - category
+        - description
+        - amount
+        - date
+
+    ExpenseListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Expense"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+        totalAmount:
+          type: number
+          format: float
+      required:
+        - data
+        - total
+        - page
+        - limit
+        - totalAmount
+
+    VeterinaryRecord:
+      type: object
+      properties:
+        id:
+          type: string
+        batchId:
+          type: string
+        date:
+          type: string
+          format: date
+        type:
+          type: string
+        description:
+          type: string
+        treatment:
+          type: string
+          nullable: true
+        medication:
+          type: string
+          nullable: true
+        dosage:
+          type: string
+          nullable: true
+        nextVisit:
+          type: string
+          format: date
+          nullable: true
+        veterinarianName:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - batchId
+        - date
+        - type
+        - description
+        - veterinarianName
+        - createdAt
+
+    CreateVeterinaryRecordRequest:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        type:
+          type: string
+        description:
+          type: string
+        treatment:
+          type: string
+        medication:
+          type: string
+        dosage:
+          type: string
+        nextVisit:
+          type: string
+          format: date
+      required:
+        - date
+        - type
+        - description
+
+    VeterinaryRecordListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/VeterinaryRecord"
+        total:
+          type: integer
+      required:
+        - data
+        - total
+
+    DashboardStats:
+      type: object
+      properties:
+        totalFarms:
+          type: integer
+        totalBatches:
+          type: integer
+        activeBatches:
+          type: integer
+        totalAnimals:
+          type: integer
+        monthlyRevenue:
+          type: number
+          format: float
+        monthlyExpenses:
+          type: number
+          format: float
+        netProfit:
+          type: number
+          format: float
+        lowStockAlerts:
+          type: integer
+        mortalityThisWeek:
+          type: integer
+        recentSales:
+          type: array
+          items:
+            $ref: "#/components/schemas/Sale"
+        batchPerformance:
+          type: array
+          items:
+            $ref: "#/components/schemas/BatchPerformance"
+      required:
+        - totalFarms
+        - totalBatches
+        - activeBatches
+        - totalAnimals
+        - monthlyRevenue
+        - monthlyExpenses
+        - netProfit
+        - lowStockAlerts
+        - mortalityThisWeek
+        - recentSales
+        - batchPerformance
+
+    BatchPerformance:
+      type: object
+      properties:
+        batchId:
+          type: string
+        batchName:
+          type: string
+        farmName:
+          type: string
+        mortalityRate:
+          type: number
+          format: float
+        feedConversion:
+          type: number
+          format: float
+        currentCount:
+          type: integer
+      required:
+        - batchId
+        - batchName
+        - farmName
+        - mortalityRate
+        - feedConversion
+        - currentCount
+
+    AuditLog:
+      type: object
+      properties:
+        id:
+          type: string
+        tenantId:
+          type: string
+        userId:
+          type: string
+        userName:
+          type: string
+        action:
+          type: string
+        entity:
+          type: string
+        entityId:
+          type: string
+          nullable: true
+        details:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - tenantId
+        - userId
+        - userName
+        - action
+        - entity
+        - createdAt
+
+    AuditLogListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/AuditLog"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+      required:
+        - data
+        - total
+        - page
+        - limit

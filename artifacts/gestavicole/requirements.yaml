@@ -1,0 +1,18 @@
+packages:
+  "framer-motion": "For page transitions and smooth UI animations"
+  "recharts": "For the dashboard analytics charts"
+  "date-fns": "For formatting dates cleanly"
+  "clsx": "Utility for constructing className strings conditionally"
+  "tailwind-merge": "Utility to cleanly merge Tailwind classes"
+
+images:
+  - path: "artifacts/gestavicole/public/images/auth-bg.png"
+    description: "A beautiful, premium, clean photography of a modern, green, and sustainable poultry farm at sunrise with soft golden light. High quality, professional, corporate SaaS aesthetic, out of focus background."
+    aspect_ratio: "16:9"
+  - path: "artifacts/gestavicole/public/images/logo.png"
+    description: "Minimalist, modern, premium geometric logo for an agricultural software called GESTAVICOLE, featuring a subtle combination of a leaf or farm element in emerald green and slate gray. White background."
+    aspect_ratio: "1:1"
+
+notes:
+  - Auth is handled via a global fetch interceptor that attaches the Bearer token to all requests from the Orval-generated API hooks.
+  - Using React Context for the Auth session to enforce RBAC and route protection.

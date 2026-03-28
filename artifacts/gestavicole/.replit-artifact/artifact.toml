@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "GESTAVICOLE"
+version = "1.0.0"
+id = "artifacts/gestavicole"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 19598
+
+[services.development]
+run = "pnpm --filter @workspace/gestavicole run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/gestavicole", "run", "build" ]
+publicDir = "artifacts/gestavicole/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "19598"
+BASE_PATH = "/"
