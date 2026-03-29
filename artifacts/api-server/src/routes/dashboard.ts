@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, and, isNull, count, sum, sql } from "drizzle-orm";
+import { eq, and, isNull, count, sum, sql, inArray } from "drizzle-orm";
 import { db } from "@workspace/db";
 import {
   farmsTable,
@@ -75,7 +75,10 @@ router.get(
       const [mortalityResult] = await db
         .select({ total: sum(dailyRecordsTable.mortality) })
         .from(dailyRecordsTable)
-        .where(sql`${dailyRecordsTable.batchId} = ANY(${batchIdList}) AND ${dailyRecordsTable.date} >= ${sevenDaysAgo}`);
+        .where(and(
+          inArray(dailyRecordsTable.batchId, batchIdList),
+          sql`${dailyRecordsTable.date} >= ${sevenDaysAgo}`
+        ));
       mortalityThisWeek = Number(mortalityResult?.total) || 0;
     }
 
