@@ -1,0 +1,237 @@
+Modèle de base de données SaaS multi-tenant, multi-site, propre, scalable et prêt pour PostgreSQL + Prisma (adapté à ton stack Node / Next).
+ 
+1.	Architecture multi-tenant
+2.	Modèle logique complet
+3.	Tables détaillées (avec champs essentiels)
+4.	Sécurité & isolation
+5.	Optimisation performance 
+
+1 ARCHITECTURE SAAS MULTI-TENANT 
+Shared database – Shared schema – tenant_id
+Toutes les tables métiers contiennent :
+tenant_id UUID NOT NULL
+•	Chaque entreprise = 1 tenant
+•	Isolation logique par tenant_id
+•	Index composite (tenant_id, id)
+
+2️ MODÈLE GLOBAL DU SYSTÈME
+Structure hiérarchique :
+Entreprise (Tenant)
+→ Fermes
+→ Bâtiments
+→ Bandes
+→ Suivi journalier
+→ Ventes / Stocks / Finances / Vétérinaire
+
+
+
+
+3 MODÈLE DE BASE DE DONNÉES COMPLET
+
+3.1 TABLE : tenants (Entreprises)
+Champ	Type
+id	UUID PK
+name	VARCHAR
+phone	VARCHAR
+email	VARCHAR
+address	TEXT
+subscription_plan	VARCHAR
+subscription_status	VARCHAR
+subscription_end_date	DATE
+created_at	TIMESTAMP
+updated_at	TIMESTAMP
+
+3.2 TABLE : users
+Champ	Type
+id	UUID PK
+tenant_id	UUID FK
+full_name	VARCHAR
+email	VARCHAR
+password_hash	TEXT
+role	ENUM (SUPER_ADMIN, ADMIN, CHEF_FERME, OUVRIER, VETERINAIRE, COMPTABLE)
+phone	VARCHAR
+is_active	BOOLEAN
+created_at	TIMESTAMP
+Index : (tenant_id, role)
+
+
+
+3.3 TABLE : farms (ferme)
+Champ	Type
+id	UUID
+tenant_id	UUID
+name	VARCHAR
+location	VARCHAR
+surface_area	DECIMAL
+created_at	TIMESTAMP
+
+3.4 TABLE : buildings (Batiments)
+Champ	Type
+id	UUID
+tenant_id	UUID
+farm_id	UUID
+name	VARCHAR
+capacity	INT
+type	ENUM (CHAIR, PONTE)
+created_at	TIMESTAMP
+
+3.5 TABLE : batches (Bandes)
+Champ	Type
+id	UUID
+tenant_id	UUID
+building_id	UUID
+type	ENUM (CHAIR, PONDEUSE)
+start_date	DATE
+initial_quantity	INT
+purchase_cost	DECIMAL
+status	ENUM (ACTIVE, CLOSED)
+created_at	TIMESTAMP
+
+
+
+
+
+
+3.6 TABLE : daily_records (Suivi journalier)
+Champ	Type
+id	UUID
+tenant_id	UUID
+batch_id	UUID
+record_date	DATE
+mortality	INT
+feed_consumed_kg	DECIMAL
+eggs_collected	INT
+average_weight	DECIMAL
+temperature	DECIMAL
+notes	TEXT
+Index : (batch_id, record_date)
+
+3.7 TABLE : stock_items
+Champ	Type
+id	UUID
+tenant_id	UUID
+name	VARCHAR
+category	ENUM (ALIMENT, MEDICAMENT, MATERIEL, LITIERE)
+unit	VARCHAR
+min_threshold	DECIMAL
+
+3.8 TABLE : stock_movements
+Champ	Type
+id	UUID
+tenant_id	UUID
+stock_item_id	UUID
+farm_id	UUID
+type	ENUM (ENTREE, SORTIE)
+quantity	DECIMAL
+unit_price	DECIMAL
+movement_date	DATE
+reference	VARCHAR
+
+3.9 TABLE : veterinary_records
+Champ	Type
+id	UUID
+tenant_id	UUID
+batch_id	UUID
+type	ENUM (VACCIN, TRAITEMENT)
+product_name	VARCHAR
+dosage	VARCHAR
+cost	DECIMAL
+date_administered	DATE
+next_due_date	DATE
+
+3.10 TABLE : customers (Clients)
+Champ	Type
+id	UUID
+tenant_id	UUID
+name	VARCHAR
+phone	VARCHAR
+address	TEXT
+
+3.11 TABLE : sales 
+Champ	Type
+id	UUID
+tenant_id	UUID
+farm_id	UUID
+batch_id	UUID NULL
+customer_id	UUID
+type	ENUM (OEUFS, POULETS)
+quantity	DECIMAL
+unit_price	DECIMAL
+total_amount	DECIMAL
+sale_date	DATE
+
+
+
+
+
+
+
+3.12 TABLE : expenses (Depenses)
+Champ	Type
+id	UUID
+tenant_id	UUID
+farm_id	UUID
+category	ENUM (ALIMENT, SALAIRE, VETERINAIRE, MAINTENANCE, TRANSPORT)
+description	TEXT
+amount	DECIMAL
+expense_date	DATE
+
+3.13 TABLE : salaries
+Champ	Type
+id	UUID
+tenant_id	UUID
+user_id	UUID
+base_salary	DECIMAL
+bonus	DECIMAL
+payment_date	DATE
+
+3.14 TABLE : subscription_payments
+Champ	Type
+id	UUID
+tenant_id	UUID
+amount	DECIMAL
+payment_method	ENUM (ORANGE_MONEY, MOOV_MONEY, CARD)
+transaction_reference	VARCHAR
+payment_date	TIMESTAMP
+
+3.15 TABLE : audit_logs
+Champ	Type
+id	UUID
+tenant_id	UUID
+user_id	UUID
+action	VARCHAR
+entity	VARCHAR
+entity_id	UUID
+created_at	TIMESTAMP
+
+4️ RELATIONS CLÉS
+•	tenant → farms (1-N)
+•	farm → buildings (1-N)
+•	building → batches (1-N)
+•	batch → daily_records (1-N)
+•	batch → veterinary_records (1-N)
+•	farm → sales (1-N)
+•	tenant → users (1-N)
+
+5️ INDEXATION STRATÉGIQUE
+Toujours indexer :
+(tenant_id)
+(batch_id)
+(farm_id)
+(record_date)
+(sale_date)
+Index composite recommandé :
+(tenant_id, farm_id)
+(tenant_id, batch_id)
+
+6️ VUES SQL IMPORTANTES
+Vue rentabilité par bande
+•	Total dépenses
+•	Total ventes
+•	Coût alimentaire
+•	Marge brute
+•	ROI %
+Vue performance ferme
+•	Taux mortalité moyen 
+•	Production moyenne œufs/jour
+

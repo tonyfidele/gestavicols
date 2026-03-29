@@ -1,0 +1,387 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+//////////////////////////////////////////////////////
+// ENUMS
+//////////////////////////////////////////////////////
+
+enum UserRole {
+  SUPER_ADMIN
+  ADMIN
+  CHEF_FERME
+  OUVRIER
+  VETERINAIRE
+  COMPTABLE
+}
+
+enum BuildingType {
+  CHAIR
+  PONTE
+}
+
+enum BatchType {
+  CHAIR
+  PONDEUSE
+}
+
+enum BatchStatus {
+  ACTIVE
+  CLOSED
+}
+
+enum StockCategory {
+  ALIMENT
+  MEDICAMENT
+  MATERIEL
+  LITIERE
+}
+
+enum StockMovementType {
+  ENTREE
+  SORTIE
+}
+
+enum VetType {
+  VACCIN
+  TRAITEMENT
+}
+
+enum SaleType {
+  OEUFS
+  POULETS
+}
+
+enum ExpenseCategory {
+  ALIMENT
+  SALAIRE
+  VETERINAIRE
+  MAINTENANCE
+  TRANSPORT
+}
+
+enum PaymentMethod {
+  ORANGE_MONEY
+  MOOV_MONEY
+  CARD
+}
+
+//////////////////////////////////////////////////////
+// TENANT (Entreprise SaaS)
+//////////////////////////////////////////////////////
+
+model Tenant {
+  id                    String   @id @default(uuid())
+  name                  String
+  phone                 String?
+  email                 String?
+  address               String?
+  subscriptionPlan      String?
+  subscriptionStatus    String?
+  subscriptionEndDate   DateTime?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  users                 User[]
+  farms                 Farm[]
+  stockItems            StockItem[]
+  subscriptionPayments  SubscriptionPayment[]
+  auditLogs             AuditLog[]
+}
+
+//////////////////////////////////////////////////////
+// USERS
+//////////////////////////////////////////////////////
+
+model User {
+  id          String   @id @default(uuid())
+  tenantId    String
+  fullName    String
+  email       String   @unique
+  passwordHash String
+  role        UserRole
+  phone       String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+
+  salaries    Salary[]
+  auditLogs   AuditLog[]
+
+  @@index([tenantId])
+  @@index([tenantId, role])
+}
+
+//////////////////////////////////////////////////////
+// FARMS
+//////////////////////////////////////////////////////
+
+model Farm {
+  id          String   @id @default(uuid())
+  tenantId    String
+  name        String
+  location    String?
+  surfaceArea Float?
+  createdAt   DateTime @default(now())
+
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  buildings   Building[]
+  sales       Sale[]
+  expenses    Expense[]
+  stockMovements StockMovement[]
+
+  @@index([tenantId])
+}
+
+//////////////////////////////////////////////////////
+// BUILDINGS
+//////////////////////////////////////////////////////
+
+model Building {
+  id        String   @id @default(uuid())
+  tenantId  String
+  farmId    String
+  name      String
+  capacity  Int
+  type      BuildingType
+  createdAt DateTime @default(now())
+
+  farm      Farm     @relation(fields: [farmId], references: [id])
+  batches   Batch[]
+
+  @@index([tenantId])
+  @@index([farmId])
+}
+
+//////////////////////////////////////////////////////
+// BATCHES
+//////////////////////////////////////////////////////
+
+model Batch {
+  id              String   @id @default(uuid())
+  tenantId        String
+  buildingId      String
+  type            BatchType
+  startDate       DateTime
+  initialQuantity Int
+  purchaseCost    Float
+  status          BatchStatus @default(ACTIVE)
+  createdAt       DateTime @default(now())
+
+  building        Building @relation(fields: [buildingId], references: [id])
+  dailyRecords    DailyRecord[]
+  veterinaryRecords VeterinaryRecord[]
+  sales           Sale[]
+
+  @@index([tenantId])
+  @@index([buildingId])
+}
+
+//////////////////////////////////////////////////////
+// DAILY RECORDS
+//////////////////////////////////////////////////////
+
+model DailyRecord {
+  id              String   @id @default(uuid())
+  tenantId        String
+  batchId         String
+  recordDate      DateTime
+  mortality       Int
+  feedConsumedKg  Float
+  eggsCollected   Int?
+  averageWeight   Float?
+  temperature     Float?
+  notes           String?
+
+  batch           Batch   @relation(fields: [batchId], references: [id])
+
+  @@index([tenantId])
+  @@index([batchId])
+  @@index([batchId, recordDate])
+}
+
+//////////////////////////////////////////////////////
+// STOCK
+//////////////////////////////////////////////////////
+
+model StockItem {
+  id           String   @id @default(uuid())
+  tenantId     String
+  name         String
+  category     StockCategory
+  unit         String
+  minThreshold Float?
+
+  tenant       Tenant   @relation(fields: [tenantId], references: [id])
+  movements    StockMovement[]
+
+  @@index([tenantId])
+}
+
+model StockMovement {
+  id            String   @id @default(uuid())
+  tenantId      String
+  stockItemId   String
+  farmId        String
+  type          StockMovementType
+  quantity      Float
+  unitPrice     Float?
+  movementDate  DateTime
+  reference     String?
+
+  stockItem     StockItem @relation(fields: [stockItemId], references: [id])
+  farm          Farm      @relation(fields: [farmId], references: [id])
+
+  @@index([tenantId])
+  @@index([stockItemId])
+  @@index([farmId])
+}
+
+//////////////////////////////////////////////////////
+// VETERINARY
+//////////////////////////////////////////////////////
+
+model VeterinaryRecord {
+  id              String   @id @default(uuid())
+  tenantId        String
+  batchId         String
+  type            VetType
+  productName     String
+  dosage          String?
+  cost            Float?
+  dateAdministered DateTime
+  nextDueDate     DateTime?
+
+  batch           Batch   @relation(fields: [batchId], references: [id])
+
+  @@index([tenantId])
+  @@index([batchId])
+}
+
+//////////////////////////////////////////////////////
+// CUSTOMERS
+//////////////////////////////////////////////////////
+
+model Customer {
+  id        String   @id @default(uuid())
+  tenantId  String
+  name      String
+  phone     String?
+  address   String?
+
+  sales     Sale[]
+
+  @@index([tenantId])
+}
+
+//////////////////////////////////////////////////////
+// SALES
+//////////////////////////////////////////////////////
+
+model Sale {
+  id          String   @id @default(uuid())
+  tenantId    String
+  farmId      String
+  batchId     String?
+  customerId  String
+  type        SaleType
+  quantity    Float
+  unitPrice   Float
+  totalAmount Float
+  saleDate    DateTime
+
+  farm        Farm      @relation(fields: [farmId], references: [id])
+  batch       Batch?    @relation(fields: [batchId], references: [id])
+  customer    Customer  @relation(fields: [customerId], references: [id])
+
+  @@index([tenantId])
+  @@index([farmId])
+  @@index([batchId])
+}
+
+//////////////////////////////////////////////////////
+// EXPENSES
+//////////////////////////////////////////////////////
+
+model Expense {
+  id          String   @id @default(uuid())
+  tenantId    String
+  farmId      String
+  category    ExpenseCategory
+  description String?
+  amount      Float
+  expenseDate DateTime
+
+  farm        Farm @relation(fields: [farmId], references: [id])
+
+  @@index([tenantId])
+  @@index([farmId])
+}
+
+//////////////////////////////////////////////////////
+// SALARIES
+//////////////////////////////////////////////////////
+
+model Salary {
+  id          String   @id @default(uuid())
+  tenantId    String
+  userId      String
+  baseSalary  Float
+  bonus       Float?
+  paymentDate DateTime
+
+  user        User @relation(fields: [userId], references: [id])
+
+  @@index([tenantId])
+  @@index([userId])
+}
+
+//////////////////////////////////////////////////////
+// SUBSCRIPTION PAYMENTS
+//////////////////////////////////////////////////////
+
+model SubscriptionPayment {
+  id                   String   @id @default(uuid())
+  tenantId             String
+  amount               Float
+  paymentMethod        PaymentMethod
+  transactionReference String?
+  paymentDate          DateTime @default(now())
+
+  tenant               Tenant @relation(fields: [tenantId], references: [id])
+
+  @@index([tenantId])
+}
+
+//////////////////////////////////////////////////////
+// AUDIT LOG
+//////////////////////////////////////////////////////
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  tenantId   String
+  userId     String
+  action     String
+  entity     String
+  entityId   String
+  createdAt  DateTime @default(now())
+
+  tenant     Tenant @relation(fields: [tenantId], references: [id])
+  user       User   @relation(fields: [userId], references: [id])
+
+  @@index([tenantId])
+  @@index([userId])
+}
+
+
+
+
+
+//npx prisma migrate dev --name init
+//npx prisma generate
