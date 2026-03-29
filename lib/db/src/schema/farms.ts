@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, integer } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, integer, real } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { tenantsTable } from "./tenants";
@@ -9,6 +9,7 @@ export const farmsTable = pgTable("farms", {
   name: text("name").notNull(),
   location: text("location").notNull(),
   capacity: integer("capacity").notNull(),
+  surfaceArea: real("surface_area"),
   tenantId: text("tenant_id").notNull().references(() => tenantsTable.id),
   managerId: text("manager_id").references(() => usersTable.id),
   deletedAt: timestamp("deleted_at", { withTimezone: true }),

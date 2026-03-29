@@ -6,6 +6,7 @@ import { buildingsTable } from "./buildings";
 import { tenantsTable } from "./tenants";
 
 export const batchStatusEnum = pgEnum("batch_status", ["ACTIF", "TERMINE", "EN_ATTENTE"]);
+export const batchTypeEnum = pgEnum("batch_type", ["CHAIR", "PONDEUSE"]);
 
 export const batchesTable = pgTable("batches", {
   id: text("id").primaryKey(),
@@ -14,8 +15,11 @@ export const batchesTable = pgTable("batches", {
   buildingId: text("building_id").references(() => buildingsTable.id),
   tenantId: text("tenant_id").notNull().references(() => tenantsTable.id),
   species: text("species").notNull(),
+  type: batchTypeEnum("type").notNull().default("CHAIR"),
   initialCount: integer("initial_count").notNull(),
   currentCount: integer("current_count").notNull(),
+  purchaseCost: real("purchase_cost").default(0),
+  provenance: text("provenance"),
   status: batchStatusEnum("status").notNull().default("EN_ATTENTE"),
   startDate: text("start_date").notNull(),
   endDate: text("end_date"),
