@@ -84,7 +84,7 @@ export default function Farms() {
                 </div>
                 <div className="text-center">
                   <p className="text-2xl font-bold text-indigo-600">{farm.activeBatchesCount}</p>
-                  <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Lots actifs</p>
+                  <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Lots en cours</p>
                 </div>
               </div>
             </div>

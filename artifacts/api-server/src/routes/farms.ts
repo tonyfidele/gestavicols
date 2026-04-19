@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { randomUUID } from "crypto";
-import { eq, and, isNull, count, sql, inArray } from "drizzle-orm";
+import { eq, and, isNull, count, sql, inArray, ne } from "drizzle-orm";
 import { db } from "@workspace/db";
 import {
   farmsTable,
@@ -84,7 +84,7 @@ router.get(
           .from(batchesTable)
           .where(and(
             eq(batchesTable.farmId, farm.id),
-            eq(batchesTable.status, "ACTIF"),
+            ne(batchesTable.status, "TERMINÉ"),
             isNull(batchesTable.deletedAt)
           ));
 
@@ -190,7 +190,7 @@ router.get(
     const [batchCount] = await db
       .select({ count: count() })
       .from(batchesTable)
-      .where(and(eq(batchesTable.farmId, farm.id), eq(batchesTable.status, "ACTIF"), isNull(batchesTable.deletedAt)));
+      .where(and(eq(batchesTable.farmId, farm.id), ne(batchesTable.status, "TERMINÉ"), isNull(batchesTable.deletedAt)));
 
     res.json(
       GetFarmResponse.parse({
