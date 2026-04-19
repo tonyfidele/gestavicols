@@ -191,6 +191,123 @@ function QuickMortalityModal({ batchId, onClose, onSuccess }: { batchId: string;
   );
 }
 
+function AddVetRecordModal({ batchId, onClose, onSuccess }: { batchId: string; onClose: () => void; onSuccess: () => void }) {
+  const [form, setForm] = useState({
+    date: new Date().toISOString().split("T")[0],
+    type: "VACCIN",
+    description: "",
+    treatment: "",
+    medication: "",
+    dosage: "",
+    nextVisit: "",
+    veterinarianName: "",
+  });
+  const { mutate: createRecord, isPending } = useCreateVeterinaryRecord();
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    createRecord(
+      {
+        batchId,
+        data: {
+          date: form.date,
+          type: form.type,
+          description: form.description,
+          treatment: form.treatment || undefined,
+          medication: form.medication || undefined,
+          dosage: form.dosage || undefined,
+          nextVisit: form.nextVisit || undefined,
+          veterinarianName: form.veterinarianName,
+        },
+      },
+      {
+        onSuccess: () => { toast.success("Enregistrement vétérinaire créé"); onSuccess(); onClose(); },
+        onError: () => toast.error("Erreur lors de la création"),
+      }
+    );
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+        <div className="p-5 border-b border-slate-100 flex justify-between items-center">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-teal-100 rounded-lg flex items-center justify-center">
+              <Syringe className="w-4 h-4 text-teal-600" />
+            </div>
+            <h2 className="text-lg font-bold text-slate-900">Nouvel Enregistrement Vétérinaire</h2>
+          </div>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 text-2xl">&times;</button>
+        </div>
+        <form onSubmit={handleSubmit} className="p-5 space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Date *</label>
+              <input type="date" required value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })}
+                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Type *</label>
+              <select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}
+                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20">
+                <option value="VACCIN">Vaccination</option>
+                <option value="TRAITEMENT">Traitement</option>
+                <option value="CONTROLE">Contrôle sanitaire</option>
+                <option value="AUTRE">Autre</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Description *</label>
+            <textarea required value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })}
+              rows={2} className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+              placeholder="Description de l'intervention..." />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Médicament</label>
+              <input type="text" value={form.medication} onChange={(e) => setForm({ ...form, medication: e.target.value })}
+                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                placeholder="Nom du produit" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Dosage</label>
+              <input type="text" value={form.dosage} onChange={(e) => setForm({ ...form, dosage: e.target.value })}
+                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                placeholder="ex: 1ml/10kg" />
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Traitement prescrit</label>
+            <input type="text" value={form.treatment} onChange={(e) => setForm({ ...form, treatment: e.target.value })}
+              className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+              placeholder="Description du traitement" />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Prochain contrôle</label>
+              <input type="date" value={form.nextVisit} onChange={(e) => setForm({ ...form, nextVisit: e.target.value })}
+                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Vétérinaire *</label>
+              <input type="text" required value={form.veterinarianName} onChange={(e) => setForm({ ...form, veterinarianName: e.target.value })}
+                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                placeholder="Nom du vétérinaire" />
+            </div>
+          </div>
+          <div className="flex gap-3 pt-2">
+            <button type="button" onClick={onClose} className="flex-1 py-2.5 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors">Annuler</button>
+            <button type="submit" disabled={isPending} className="flex-1 py-2.5 bg-teal-600 text-white rounded-xl text-sm font-medium hover:bg-teal-700 transition-colors disabled:opacity-50">
+              {isPending ? "Création..." : "Enregistrer"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 function TerminateBatchModal({ batchId, batchName, onClose, onSuccess }: { batchId: string; batchName: string; onClose: () => void; onSuccess: () => void }) {
   const updateMutation = useUpdateBatch();
 
@@ -243,6 +360,7 @@ export default function BatchDetail() {
   const [isDailyModalOpen, setIsDailyModalOpen] = useState(false);
   const [isMortalityModalOpen, setIsMortalityModalOpen] = useState(false);
   const [isTerminateModalOpen, setIsTerminateModalOpen] = useState(false);
+  const [isVetModalOpen, setIsVetModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"daily" | "vet">("daily");
 
   const {
@@ -268,6 +386,7 @@ export default function BatchDetail() {
   const handleRefreshAll = () => {
     refetchBatch();
     refetchDaily();
+    refetchVet();
   };
 
   if (!id) {
@@ -472,12 +591,25 @@ export default function BatchDetail() {
 
       {activeTab === "vet" && (
         <div className="space-y-3">
+          {(isActive || isPending) && (
+            <div className="flex justify-end">
+              <button
+                onClick={() => setIsVetModalOpen(true)}
+                className="flex items-center gap-2 bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-xl text-sm font-medium transition-colors shadow-sm"
+              >
+                <Plus className="w-4 h-4" /> Ajouter un suivi vétérinaire
+              </button>
+            </div>
+          )}
           {vetLoading ? (
             <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>
           ) : vetRecords?.data.length === 0 ? (
             <div className="py-12 text-center bg-white rounded-2xl border border-slate-200">
               <Syringe className="w-10 h-10 text-slate-300 mx-auto mb-3" />
               <p className="text-slate-500">Aucun enregistrement vétérinaire</p>
+              {(isActive || isPending) && (
+                <button onClick={() => setIsVetModalOpen(true)} className="mt-3 text-teal-600 text-sm hover:underline">+ Ajouter le premier enregistrement</button>
+              )}
             </div>
           ) : (
             vetRecords?.data.map((record) => (
@@ -509,6 +641,7 @@ export default function BatchDetail() {
 
       {isDailyModalOpen && <AddDailyRecordModal batchId={id ?? ""} onClose={() => setIsDailyModalOpen(false)} onSuccess={handleRefreshAll} />}
       {isMortalityModalOpen && <QuickMortalityModal batchId={id ?? ""} onClose={() => setIsMortalityModalOpen(false)} onSuccess={handleRefreshAll} />}
+      {isVetModalOpen && <AddVetRecordModal batchId={id ?? ""} onClose={() => setIsVetModalOpen(false)} onSuccess={() => { refetchVet(); refetchBatch(); }} />}
       {isTerminateModalOpen && batch && (
         <TerminateBatchModal
           batchId={id ?? ""}
