@@ -11,3 +11,4 @@ export * from "./veterinary-records";
 export * from "./audit-logs";
 export * from "./customers";
 export * from "./salaries";
+export * from "./egg-productions";

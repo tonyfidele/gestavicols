@@ -102,4 +102,39 @@ router.post(
   }
 );
 
+router.put(
+  "/sales/:saleId",
+  requireAuth,
+  requirePermission("SALE", "UPDATE"),
+  async (req, res): Promise<void> => {
+    const { saleId } = req.params;
+    const user = req.user!;
+    const parsed = CreateSaleBody.safeParse(req.body);
+    if (!parsed.success) { res.status(400).json({ message: parsed.error.message }); return; }
+    const conditions = [eq(salesTable.id, saleId), isNull(salesTable.deletedAt)];
+    if (user.role !== "SUPER_ADMIN") conditions.push(eq(salesTable.tenantId, user.tenantId));
+    const totalAmount = parsed.data.quantity * parsed.data.unitPrice;
+    const [updated] = await db.update(salesTable).set({ ...parsed.data, totalAmount }).where(and(...conditions)).returning();
+    if (!updated) { res.status(404).json({ message: "Vente introuvable" }); return; }
+    await logAudit(user, "UPDATE_SALE", "SALE", updated.id);
+    res.json({ ...updated, batchName: null });
+  }
+);
+
+router.delete(
+  "/sales/:saleId",
+  requireAuth,
+  requirePermission("SALE", "DELETE"),
+  async (req, res): Promise<void> => {
+    const { saleId } = req.params;
+    const user = req.user!;
+    const conditions = [eq(salesTable.id, saleId), isNull(salesTable.deletedAt)];
+    if (user.role !== "SUPER_ADMIN") conditions.push(eq(salesTable.tenantId, user.tenantId));
+    const [deleted] = await db.update(salesTable).set({ deletedAt: new Date() }).where(and(...conditions)).returning();
+    if (!deleted) { res.status(404).json({ message: "Vente introuvable" }); return; }
+    await logAudit(user, "DELETE_SALE", "SALE", deleted.id);
+    res.json({ message: "Vente supprimée" });
+  }
+);
+
 export default router;

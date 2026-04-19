@@ -13,7 +13,7 @@ GESTAVICOLE est une plateforme SaaS multi-tenant pour la gestion avicole (éleva
 - **API framework**: Express 5
 - **Database**: PostgreSQL + Drizzle ORM
 - **Auth**: JWT (jsonwebtoken + bcryptjs)
-- **Validation**: Zod (`zod/v4`), `drizzle-zod`
+- **Validation**: Zod, `drizzle-zod`
 - **API codegen**: Orval (from OpenAPI spec)
 - **Frontend**: React + Vite + TailwindCSS + Recharts
 - **Build**: esbuild (CJS bundle)

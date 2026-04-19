@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { AppLayout } from "@/components/layout/app-layout";
-import { useListSalaries, useCreateSalary, useUpdateSalary, useListUsers } from "@workspace/api-client-react";
-import { Users, Plus, Loader2, DollarSign, CheckCircle, Clock, XCircle, ChevronDown } from "lucide-react";
+import { useListSalaries, useCreateSalary, useUpdateSalary, useDeleteSalary, useListUsers } from "@workspace/api-client-react";
+import { Users, Plus, Loader2, DollarSign, CheckCircle, Clock, XCircle, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -158,11 +158,13 @@ function CreateSalaryModal({ onClose, onSuccess }: { onClose: () => void; onSucc
 
 export default function HR() {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const currentDate = new Date();
   const [selectedMonth, setSelectedMonth] = useState(currentDate.getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(currentDate.getFullYear());
   const { data, isLoading, refetch } = useListSalaries({ month: selectedMonth, year: selectedYear, limit: 100 });
   const { mutate: updateSalary } = useUpdateSalary();
+  const deleteMutation = useDeleteSalary();
 
   const handleMarkPaid = (id: string) => {
     updateSalary(
@@ -172,6 +174,19 @@ export default function HR() {
         onError: () => toast.error("Erreur"),
       }
     );
+  };
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    try {
+      await deleteMutation.mutateAsync({ salaryId: deleteTarget });
+      toast.success("Fiche de salaire supprimée");
+      refetch();
+    } catch {
+      toast.error("Erreur lors de la suppression");
+    } finally {
+      setDeleteTarget(null);
+    }
   };
 
   const totalNetSalary = data?.data.reduce((sum, s) => sum + (s.netSalary ?? 0), 0) ?? 0;
@@ -289,14 +304,23 @@ export default function HR() {
                     <td className="px-6 py-4 font-bold text-slate-900">{(salary.netSalary ?? 0).toLocaleString("fr-ML")} FCFA</td>
                     <td className="px-6 py-4">{statusBadge(salary.paymentStatus)}</td>
                     <td className="px-6 py-4 text-right">
-                      {salary.paymentStatus === "EN_ATTENTE" && (
+                      <div className="flex items-center justify-end gap-2">
+                        {salary.paymentStatus === "EN_ATTENTE" && (
+                          <button
+                            onClick={() => handleMarkPaid(salary.id)}
+                            className="text-xs px-3 py-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg hover:bg-emerald-100 transition-colors font-medium"
+                          >
+                            Marquer payé
+                          </button>
+                        )}
                         <button
-                          onClick={() => handleMarkPaid(salary.id)}
-                          className="text-xs px-3 py-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg hover:bg-emerald-100 transition-colors font-medium"
+                          onClick={() => setDeleteTarget(salary.id)}
+                          className="p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
+                          title="Supprimer"
                         >
-                          Marquer payé
+                          <Trash2 className="w-4 h-4" />
                         </button>
-                      )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -313,6 +337,21 @@ export default function HR() {
       )}
 
       {isModalOpen && <CreateSalaryModal onClose={() => setIsModalOpen(false)} onSuccess={refetch} />}
+
+      {deleteTarget && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
+            <h3 className="text-lg font-bold text-slate-900 mb-2">Confirmer la suppression</h3>
+            <p className="text-slate-600 mb-6">Voulez-vous vraiment supprimer cette fiche de salaire ?</p>
+            <div className="flex gap-3 justify-end">
+              <button onClick={() => setDeleteTarget(null)} className="px-4 py-2 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 font-medium">Annuler</button>
+              <button onClick={handleDelete} disabled={deleteMutation.isPending} className="px-4 py-2 rounded-xl bg-red-600 text-white hover:bg-red-700 font-medium disabled:opacity-50">
+                {deleteMutation.isPending ? "Suppression..." : "Supprimer"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </AppLayout>
   );
 }

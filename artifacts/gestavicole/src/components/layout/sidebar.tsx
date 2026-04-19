@@ -16,6 +16,7 @@ import {
   UserCheck,
   BarChart3,
   UsersRound,
+  Egg,
 } from "lucide-react";
 
 export function Sidebar() {
@@ -37,6 +38,7 @@ export function Sidebar() {
         { name: "Ventes", href: "/sales", icon: DollarSign, roles: ["SUPER_ADMIN", "ADMIN", "COMPTABLE", "CHEF_FERME"] },
         { name: "Clients", href: "/customers", icon: UsersRound, roles: ["SUPER_ADMIN", "ADMIN", "COMPTABLE", "CHEF_FERME"] },
         { name: "Stock", href: "/stock", icon: Package, roles: ["SUPER_ADMIN", "ADMIN", "CHEF_FERME"] },
+        { name: "Production d'Œufs", href: "/eggs", icon: Egg, roles: ["SUPER_ADMIN", "ADMIN", "CHEF_FERME", "OUVRIER"] },
       ],
     },
     {

@@ -12,6 +12,7 @@ import auditRouter from "./audit";
 import customersRouter from "./customers";
 import salariesRouter from "./salaries";
 import analyticsRouter from "./analytics";
+import eggsRouter from "./eggs";
 
 const router: IRouter = Router();
 
@@ -28,5 +29,6 @@ router.use(auditRouter);
 router.use(customersRouter);
 router.use(salariesRouter);
 router.use(analyticsRouter);
+router.use(eggsRouter);
 
 export default router;

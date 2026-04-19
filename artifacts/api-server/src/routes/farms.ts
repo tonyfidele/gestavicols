@@ -266,8 +266,12 @@ router.delete(
       return;
     }
 
-    await logAudit(user, "DELETE_FARM", "FARM", deleted.id);
-    res.json(DeleteFarmResponse.parse({ message: "Ferme supprimée" }));
+    const now = new Date();
+    await db.update(buildingsTable).set({ deletedAt: now }).where(eq(buildingsTable.farmId, deleted.id));
+    await db.update(batchesTable).set({ deletedAt: now }).where(and(eq(batchesTable.farmId, deleted.id), isNull(batchesTable.deletedAt)));
+
+    await logAudit(user, "DELETE_FARM", "FARM", deleted.id, `Cascade deleted farm ${deleted.name}`);
+    res.json(DeleteFarmResponse.parse({ message: "Ferme et toutes ses données supprimées" }));
   }
 );
 

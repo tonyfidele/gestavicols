@@ -86,4 +86,38 @@ router.post(
   }
 );
 
+router.put(
+  "/expenses/:expenseId",
+  requireAuth,
+  requirePermission("EXPENSE", "UPDATE"),
+  async (req, res): Promise<void> => {
+    const { expenseId } = req.params;
+    const user = req.user!;
+    const parsed = CreateExpenseBody.safeParse(req.body);
+    if (!parsed.success) { res.status(400).json({ message: parsed.error.message }); return; }
+    const conditions = [eq(expensesTable.id, expenseId), isNull(expensesTable.deletedAt)];
+    if (user.role !== "SUPER_ADMIN") conditions.push(eq(expensesTable.tenantId, user.tenantId));
+    const [updated] = await db.update(expensesTable).set(parsed.data).where(and(...conditions)).returning();
+    if (!updated) { res.status(404).json({ message: "Dépense introuvable" }); return; }
+    await logAudit(user, "UPDATE_EXPENSE", "EXPENSE", updated.id);
+    res.json(updated);
+  }
+);
+
+router.delete(
+  "/expenses/:expenseId",
+  requireAuth,
+  requirePermission("EXPENSE", "DELETE"),
+  async (req, res): Promise<void> => {
+    const { expenseId } = req.params;
+    const user = req.user!;
+    const conditions = [eq(expensesTable.id, expenseId), isNull(expensesTable.deletedAt)];
+    if (user.role !== "SUPER_ADMIN") conditions.push(eq(expensesTable.tenantId, user.tenantId));
+    const [deleted] = await db.update(expensesTable).set({ deletedAt: new Date() }).where(and(...conditions)).returning();
+    if (!deleted) { res.status(404).json({ message: "Dépense introuvable" }); return; }
+    await logAudit(user, "DELETE_EXPENSE", "EXPENSE", deleted.id);
+    res.json({ message: "Dépense supprimée" });
+  }
+);
+
 export default router;

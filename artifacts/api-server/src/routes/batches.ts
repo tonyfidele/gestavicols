@@ -219,6 +219,22 @@ router.put(
   }
 );
 
+router.delete(
+  "/batches/:batchId",
+  requireAuth,
+  requirePermission("BATCH", "DELETE"),
+  async (req, res): Promise<void> => {
+    const { batchId } = req.params;
+    const user = req.user!;
+    const conditions = [eq(batchesTable.id, batchId), isNull(batchesTable.deletedAt)];
+    if (user.role !== "SUPER_ADMIN") conditions.push(eq(batchesTable.tenantId, user.tenantId));
+    const [deleted] = await db.update(batchesTable).set({ deletedAt: new Date() }).where(and(...conditions)).returning();
+    if (!deleted) { res.status(404).json({ message: "Lot introuvable" }); return; }
+    await logAudit(user, "DELETE_BATCH", "BATCH", deleted.id);
+    res.json({ message: "Lot supprimé" });
+  }
+);
+
 router.get(
   "/batches/:batchId/daily-records",
   requireAuth,

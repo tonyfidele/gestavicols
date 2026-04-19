@@ -157,4 +157,21 @@ router.put(
   }
 );
 
+router.delete(
+  "/salaries/:salaryId",
+  requireAuth,
+  requirePermission("SALARY", "DELETE"),
+  async (req, res): Promise<void> => {
+    const { salaryId } = req.params;
+    const user = req.user!;
+    const [deleted] = await db
+      .delete(salariesTable)
+      .where(and(eq(salariesTable.id, salaryId), eq(salariesTable.tenantId, user.tenantId)))
+      .returning();
+    if (!deleted) { res.status(404).json({ message: "Fiche introuvable" }); return; }
+    await logAudit(user, "DELETE_SALARY", "SALARY", deleted.id);
+    res.json({ message: "Fiche de salaire supprimée" });
+  }
+);
+
 export default router;

@@ -1,14 +1,30 @@
 import React, { useState } from "react";
 import { AppLayout } from "@/components/layout/app-layout";
-import { useListBatches, useCreateBatch, useListFarms } from "@workspace/api-client-react";
-import { Plus, Layers, Loader2, ArrowRight, Activity } from "lucide-react";
+import { useListBatches, useCreateBatch, useDeleteBatch, useListFarms } from "@workspace/api-client-react";
+import { Plus, Layers, Loader2, ArrowRight, Activity, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import { Link } from "wouter";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
 export default function Batches() {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const { data: batchesData, isLoading, refetch } = useListBatches({ limit: 50 });
+  const deleteMutation = useDeleteBatch();
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    try {
+      await deleteMutation.mutateAsync({ batchId: deleteTarget });
+      toast.success("Lot supprimé");
+      refetch();
+    } catch {
+      toast.error("Erreur lors de la suppression");
+    } finally {
+      setDeleteTarget(null);
+    }
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -80,9 +96,18 @@ export default function Batches() {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <Link href={`/batches/${batch.id}`} className="inline-flex items-center justify-center p-2 rounded-lg bg-slate-100 text-slate-600 hover:bg-primary hover:text-white transition-colors">
-                        <ArrowRight className="w-4 h-4" />
-                      </Link>
+                      <div className="flex items-center justify-end gap-2">
+                        <Link href={`/batches/${batch.id}`} className="inline-flex items-center justify-center p-2 rounded-lg bg-slate-100 text-slate-600 hover:bg-primary hover:text-white transition-colors">
+                          <ArrowRight className="w-4 h-4" />
+                        </Link>
+                        <button
+                          onClick={() => setDeleteTarget(batch.id)}
+                          className="p-2 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 transition-colors"
+                          title="Supprimer"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -98,6 +123,21 @@ export default function Batches() {
       )}
 
       {isModalOpen && <CreateBatchModal onClose={() => setIsModalOpen(false)} onSuccess={refetch} />}
+
+      {deleteTarget && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
+            <h3 className="text-lg font-bold text-slate-900 mb-2">Confirmer la suppression</h3>
+            <p className="text-slate-600 mb-6">Voulez-vous vraiment supprimer ce lot ? Cette action est irréversible.</p>
+            <div className="flex gap-3 justify-end">
+              <button onClick={() => setDeleteTarget(null)} className="px-4 py-2 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 font-medium">Annuler</button>
+              <button onClick={handleDelete} disabled={deleteMutation.isPending} className="px-4 py-2 rounded-xl bg-red-600 text-white hover:bg-red-700 font-medium disabled:opacity-50">
+                {deleteMutation.isPending ? "Suppression..." : "Supprimer"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </AppLayout>
   );
 }

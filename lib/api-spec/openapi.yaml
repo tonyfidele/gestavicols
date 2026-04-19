@@ -482,6 +482,25 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Batch"
+    delete:
+      operationId: deleteBatch
+      tags: [batches]
+      summary: Delete a batch
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: batchId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Batch deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeleteResponse"
 
   /batches/{batchId}/daily-records:
     get:
@@ -981,6 +1000,289 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Salary"
+    delete:
+      operationId: deleteSalary
+      tags: [hr]
+      summary: Delete a salary record
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: salaryId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Salary deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeleteResponse"
+
+  /sales/{saleId}:
+    put:
+      operationId: updateSale
+      tags: [sales]
+      summary: Update a sale
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: saleId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSaleRequest"
+      responses:
+        "200":
+          description: Sale updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Sale"
+    delete:
+      operationId: deleteSale
+      tags: [sales]
+      summary: Delete a sale
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: saleId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Sale deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeleteResponse"
+
+  /stock/{stockId}:
+    put:
+      operationId: updateStockItem
+      tags: [stock]
+      summary: Update a stock item
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: stockId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateStockRequest"
+      responses:
+        "200":
+          description: Stock item updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Stock"
+    delete:
+      operationId: deleteStockItem
+      tags: [stock]
+      summary: Delete a stock item
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: stockId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Stock item deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeleteResponse"
+
+  /expenses/{expenseId}:
+    put:
+      operationId: updateExpense
+      tags: [expenses]
+      summary: Update an expense
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: expenseId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateExpenseRequest"
+      responses:
+        "200":
+          description: Expense updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Expense"
+    delete:
+      operationId: deleteExpense
+      tags: [expenses]
+      summary: Delete an expense
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: expenseId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Expense deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeleteResponse"
+
+  /users/{userId}/toggle-active:
+    patch:
+      operationId: toggleUserActive
+      tags: [users]
+      summary: Toggle user active status
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: User status toggled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ToggleUserActiveResponse"
+
+  /eggs:
+    get:
+      operationId: listEggProductions
+      tags: [eggs]
+      summary: List egg production records
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: batchId
+          in: query
+          schema:
+            type: string
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+      responses:
+        "200":
+          description: List of egg production records
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EggProductionListResponse"
+    post:
+      operationId: createEggProduction
+      tags: [eggs]
+      summary: Create an egg production record
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateEggProductionRequest"
+      responses:
+        "201":
+          description: Egg production record created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EggProduction"
+
+  /eggs/{eggId}:
+    put:
+      operationId: updateEggProduction
+      tags: [eggs]
+      summary: Update an egg production record
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: eggId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateEggProductionRequest"
+      responses:
+        "200":
+          description: Egg production record updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EggProduction"
+    delete:
+      operationId: deleteEggProduction
+      tags: [eggs]
+      summary: Delete an egg production record
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: eggId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Egg production record deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeleteResponse"
 
   /analytics:
     get:
@@ -2298,3 +2600,112 @@ components:
         - monthlySales
         - monthlyExpenses
         - expensesByCategory
+
+    DeleteResponse:
+      type: object
+      properties:
+        message:
+          type: string
+      required:
+        - message
+
+    ToggleUserActiveResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        isActive:
+          type: boolean
+        message:
+          type: string
+      required:
+        - id
+        - isActive
+        - message
+
+    EggProduction:
+      type: object
+      properties:
+        id:
+          type: string
+        batchId:
+          type: string
+        farmId:
+          type: string
+        date:
+          type: string
+          format: date
+        eggsCollected:
+          type: integer
+        brokenEggs:
+          type: integer
+        soldEggs:
+          type: integer
+        stockEggs:
+          type: integer
+        cratesCount:
+          type: number
+          format: float
+        notes:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - batchId
+        - farmId
+        - date
+        - eggsCollected
+        - brokenEggs
+        - soldEggs
+        - stockEggs
+        - cratesCount
+
+    CreateEggProductionRequest:
+      type: object
+      properties:
+        batchId:
+          type: string
+        farmId:
+          type: string
+        date:
+          type: string
+          format: date
+        eggsCollected:
+          type: integer
+        brokenEggs:
+          type: integer
+        soldEggs:
+          type: integer
+        stockEggs:
+          type: integer
+        cratesCount:
+          type: number
+          format: float
+        notes:
+          type: string
+      required:
+        - batchId
+        - farmId
+        - date
+        - eggsCollected
+
+    EggProductionListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/EggProduction"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+      required:
+        - data
+        - total
+        - page
+        - limit

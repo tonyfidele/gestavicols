@@ -251,4 +251,22 @@ router.delete(
   }
 );
 
+router.patch(
+  "/users/:userId/toggle-active",
+  requireAuth,
+  requirePermission("USER", "UPDATE"),
+  async (req, res): Promise<void> => {
+    const { userId } = req.params;
+    const user = req.user!;
+    if (userId === user.userId) { res.status(400).json({ message: "Impossible de modifier votre propre compte" }); return; }
+    const conditions = [eq(usersTable.id, userId), isNull(usersTable.deletedAt)];
+    if (user.role !== "SUPER_ADMIN") conditions.push(eq(usersTable.tenantId, user.tenantId));
+    const [target] = await db.select({ isActive: usersTable.isActive }).from(usersTable).where(and(...conditions));
+    if (!target) { res.status(404).json({ message: "Utilisateur introuvable" }); return; }
+    const [updated] = await db.update(usersTable).set({ isActive: !target.isActive }).where(and(...conditions)).returning();
+    await logAudit(user, "TOGGLE_USER", "USER", updated.id, `User ${updated.isActive ? "activated" : "deactivated"}`);
+    res.json({ id: updated.id, isActive: updated.isActive, message: updated.isActive ? "Utilisateur activé" : "Utilisateur désactivé" });
+  }
+);
+
 export default router;

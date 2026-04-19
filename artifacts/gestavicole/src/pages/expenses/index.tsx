@@ -1,16 +1,36 @@
 import React, { useState } from "react";
 import { AppLayout } from "@/components/layout/app-layout";
-import { useListExpenses, useCreateExpense, useListFarms, useListBatches } from "@workspace/api-client-react";
-import { Plus, CreditCard, Loader2 } from "lucide-react";
+import { useListExpenses, useCreateExpense, useUpdateExpense, useDeleteExpense, useListFarms, useListBatches } from "@workspace/api-client-react";
+import { Plus, CreditCard, Loader2, Pencil, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { formatCurrency } from "@/lib/utils";
+import { toast } from "sonner";
 
 const CATEGORIES = ["ALIMENTS", "MEDICAMENTS", "ENERGIE", "MAIN_OEUVRE", "EQUIPEMENT", "TRANSPORT", "AUTRE"];
 
+type Expense = {
+  id: string;
+  category: string;
+  description: string;
+  amount: number;
+  date: string;
+  batchId?: string;
+  farmId?: string;
+};
+
+const EMPTY_FORM = {
+  category: "ALIMENTS", description: "", amount: "",
+  date: format(new Date(), "yyyy-MM-dd"), batchId: "", farmId: "",
+};
+
 export default function Expenses() {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const { data: expensesData, isLoading, refetch } = useListExpenses({ limit: 50 });
+  const [editExpense, setEditExpense] = useState<Expense | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+
+  const { data: expensesData, isLoading, refetch } = useListExpenses({ limit: 100 });
+  const deleteMutation = useDeleteExpense();
 
   const getCategoryColor = (cat: string) => {
     switch (cat) {
@@ -24,6 +44,19 @@ export default function Expenses() {
     }
   };
 
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    try {
+      await deleteMutation.mutateAsync({ expenseId: deleteTarget });
+      toast.success("Dépense supprimée");
+      refetch();
+    } catch {
+      toast.error("Erreur lors de la suppression");
+    } finally {
+      setDeleteTarget(null);
+    }
+  };
+
   return (
     <AppLayout>
       <div className="flex justify-between items-center mb-8">
@@ -32,7 +65,7 @@ export default function Expenses() {
           <p className="text-slate-500 mt-1">Suivi des charges et dépenses d'exploitation</p>
         </div>
         <button
-          onClick={() => setIsModalOpen(true)}
+          onClick={() => { setEditExpense(null); setIsModalOpen(true); }}
           className="flex items-center gap-2 bg-primary hover:bg-emerald-600 text-white px-4 py-2.5 rounded-xl font-medium shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5"
         >
           <Plus className="w-5 h-5" /> Enregistrer dépense
@@ -41,14 +74,12 @@ export default function Expenses() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
-          <p className="text-sm font-medium text-slate-500">Total dépenses</p>
+          <p className="text-sm font-medium text-slate-500">Nombre de dépenses</p>
           <p className="text-3xl font-bold text-slate-900 mt-2">{expensesData?.total || 0}</p>
         </div>
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
           <p className="text-sm font-medium text-slate-500">Montant total</p>
-          <p className="text-3xl font-bold text-red-600 mt-2">
-            {formatCurrency(expensesData?.totalAmount || 0)}
-          </p>
+          <p className="text-3xl font-bold text-red-600 mt-2">{formatCurrency(expensesData?.totalAmount || 0)}</p>
         </div>
       </div>
 
@@ -56,34 +87,53 @@ export default function Expenses() {
         <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>
       ) : (
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-          <table className="w-full text-left">
-            <thead>
-              <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 text-sm uppercase tracking-wider">
-                <th className="px-6 py-4 font-semibold">Date</th>
-                <th className="px-6 py-4 font-semibold">Description</th>
-                <th className="px-6 py-4 font-semibold">Catégorie</th>
-                <th className="px-6 py-4 font-semibold text-right">Montant</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {expensesData?.data.map((expense) => (
-                <tr key={expense.id} className="hover:bg-slate-50/50 transition-colors">
-                  <td className="px-6 py-4 font-medium text-slate-900">
-                    {format(new Date(expense.date), "dd MMM yyyy", { locale: fr })}
-                  </td>
-                  <td className="px-6 py-4 text-slate-700">{expense.description}</td>
-                  <td className="px-6 py-4">
-                    <span className={`px-3 py-1 rounded-full text-xs font-bold border ${getCategoryColor(expense.category)}`}>
-                      {expense.category}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-right font-bold text-red-600">
-                    {formatCurrency(expense.amount)}
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 text-sm uppercase tracking-wider">
+                  <th className="px-6 py-4 font-semibold">Date</th>
+                  <th className="px-6 py-4 font-semibold">Description</th>
+                  <th className="px-6 py-4 font-semibold">Catégorie</th>
+                  <th className="px-6 py-4 font-semibold">Montant</th>
+                  <th className="px-6 py-4 font-semibold text-right">Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {expensesData?.data.map((expense) => (
+                  <tr key={expense.id} className="hover:bg-slate-50/50 transition-colors">
+                    <td className="px-6 py-4 font-medium text-slate-900">
+                      {format(new Date(expense.date), "dd MMM yyyy", { locale: fr })}
+                    </td>
+                    <td className="px-6 py-4 text-slate-700">{expense.description}</td>
+                    <td className="px-6 py-4">
+                      <span className={`px-3 py-1 rounded-full text-xs font-bold border ${getCategoryColor(expense.category)}`}>
+                        {expense.category}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 font-bold text-red-600">{formatCurrency(expense.amount)}</td>
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => { setEditExpense(expense as Expense); setIsModalOpen(true); }}
+                          className="p-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
+                          title="Modifier"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => setDeleteTarget(expense.id)}
+                          className="p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
+                          title="Supprimer"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
           {(!expensesData?.data || expensesData.data.length === 0) && (
             <div className="py-16 text-center">
               <CreditCard className="w-12 h-12 text-slate-300 mx-auto mb-4" />
@@ -93,45 +143,83 @@ export default function Expenses() {
         </div>
       )}
 
-      {isModalOpen && <CreateExpenseModal onClose={() => setIsModalOpen(false)} onSuccess={refetch} />}
+      {isModalOpen && (
+        <ExpenseModal
+          expense={editExpense}
+          onClose={() => { setIsModalOpen(false); setEditExpense(null); }}
+          onSuccess={refetch}
+        />
+      )}
+
+      {deleteTarget && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
+            <h3 className="text-lg font-bold text-slate-900 mb-2">Confirmer la suppression</h3>
+            <p className="text-slate-600 mb-6">Voulez-vous vraiment supprimer cette dépense ?</p>
+            <div className="flex gap-3 justify-end">
+              <button onClick={() => setDeleteTarget(null)} className="px-4 py-2 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 font-medium">Annuler</button>
+              <button onClick={handleDelete} disabled={deleteMutation.isPending} className="px-4 py-2 rounded-xl bg-red-600 text-white hover:bg-red-700 font-medium disabled:opacity-50">
+                {deleteMutation.isPending ? "Suppression..." : "Supprimer"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </AppLayout>
   );
 }
 
-function CreateExpenseModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
-  const [formData, setFormData] = useState({
-    category: "ALIMENTS", description: "", amount: "",
-    date: format(new Date(), "yyyy-MM-dd"), batchId: "", farmId: "",
-  });
+function ExpenseModal({ expense, onClose, onSuccess }: { expense: Expense | null; onClose: () => void; onSuccess: () => void }) {
+  const isEdit = !!expense;
+  const [formData, setFormData] = useState(
+    expense
+      ? {
+          category: expense.category,
+          description: expense.description,
+          amount: String(expense.amount),
+          date: expense.date.split("T")[0],
+          batchId: expense.batchId || "",
+          farmId: expense.farmId || "",
+        }
+      : { ...EMPTY_FORM }
+  );
   const createMutation = useCreateExpense();
+  const updateMutation = useUpdateExpense();
   const { data: farmsData } = useListFarms({ limit: 100 });
-  const { data: batchesData } = useListBatches({ status: "ACTIF", limit: 100 });
+  const { data: batchesData } = useListBatches({ limit: 100 });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const payload = {
+      category: formData.category,
+      description: formData.description,
+      amount: parseFloat(formData.amount),
+      date: new Date(formData.date).toISOString(),
+      batchId: formData.batchId || undefined,
+      farmId: formData.farmId || undefined,
+    };
     try {
-      await createMutation.mutateAsync({
-        data: {
-          category: formData.category,
-          description: formData.description,
-          amount: parseFloat(formData.amount),
-          date: new Date(formData.date).toISOString(),
-          batchId: formData.batchId || undefined,
-          farmId: formData.farmId || undefined,
-        },
-      });
+      if (isEdit && expense) {
+        await updateMutation.mutateAsync({ expenseId: expense.id, data: payload });
+        toast.success("Dépense mise à jour");
+      } else {
+        await createMutation.mutateAsync({ data: payload });
+        toast.success("Dépense enregistrée");
+      }
       onSuccess();
       onClose();
-    } catch (err) {
-      console.error(err);
+    } catch {
+      toast.error("Erreur lors de l'enregistrement");
     }
   };
+
+  const isPending = createMutation.isPending || updateMutation.isPending;
 
   return (
     <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
         <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
-          <h2 className="text-lg font-bold text-slate-900">Nouvelle Dépense</h2>
+          <h2 className="text-lg font-bold text-slate-900">{isEdit ? "Modifier la dépense" : "Nouvelle Dépense"}</h2>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600 text-2xl leading-none">&times;</button>
         </div>
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
@@ -176,10 +264,10 @@ function CreateExpenseModal({ onClose, onSuccess }: { onClose: () => void; onSuc
               {batchesData?.data.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
             </select>
           </div>
-          <div className="pt-4 flex justify-end gap-3">
+          <div className="pt-2 flex justify-end gap-3">
             <button type="button" onClick={onClose} className="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-100 font-medium">Annuler</button>
-            <button type="submit" disabled={createMutation.isPending} className="px-6 py-2 rounded-xl bg-primary hover:bg-emerald-600 text-white font-medium shadow-md shadow-primary/20 disabled:opacity-50">
-              {createMutation.isPending ? "Enregistrement..." : "Enregistrer"}
+            <button type="submit" disabled={isPending} className="px-6 py-2 rounded-xl bg-primary hover:bg-emerald-600 text-white font-medium shadow-md shadow-primary/20 disabled:opacity-50">
+              {isPending ? "Enregistrement..." : isEdit ? "Mettre à jour" : "Enregistrer"}
             </button>
           </div>
         </form>

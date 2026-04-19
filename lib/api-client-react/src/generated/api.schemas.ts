@@ -545,6 +545,49 @@ export interface AnalyticsResponse {
   expensesByCategory: ExpenseByCategoryItem[];
 }
 
+export interface DeleteResponse {
+  message: string;
+}
+
+export interface ToggleUserActiveResponse {
+  id: string;
+  isActive: boolean;
+  message: string;
+}
+
+export interface EggProduction {
+  id: string;
+  batchId: string;
+  farmId: string;
+  date: string;
+  eggsCollected: number;
+  brokenEggs: number;
+  soldEggs: number;
+  stockEggs: number;
+  cratesCount: number;
+  notes?: string;
+  createdAt?: string;
+}
+
+export interface CreateEggProductionRequest {
+  batchId: string;
+  farmId: string;
+  date: string;
+  eggsCollected: number;
+  brokenEggs?: number;
+  soldEggs?: number;
+  stockEggs?: number;
+  cratesCount?: number;
+  notes?: string;
+}
+
+export interface EggProductionListResponse {
+  data: EggProduction[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
 export type ListUsersParams = {
   role?: UserRole;
   page?: number;
@@ -607,6 +650,14 @@ export type ListCustomersParams = {
 export type ListSalariesParams = {
   month?: number;
   year?: number;
+  page?: number;
+  limit?: number;
+};
+
+export type ListEggProductionsParams = {
+  batchId?: string;
+  startDate?: string;
+  endDate?: string;
   page?: number;
   limit?: number;
 };

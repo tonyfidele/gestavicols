@@ -446,6 +446,17 @@ export const UpdateBatchResponse = zod.object({
 });
 
 /**
+ * @summary Delete a batch
+ */
+export const DeleteBatchParams = zod.object({
+  batchId: zod.coerce.string(),
+});
+
+export const DeleteBatchResponse = zod.object({
+  message: zod.string(),
+});
+
+/**
  * @summary List daily records for a batch
  */
 export const ListDailyRecordsParams = zod.object({
@@ -911,6 +922,245 @@ export const UpdateSalaryResponse = zod.object({
   paymentStatus: zod.enum(["EN_ATTENTE", "PAYE", "ANNULE"]),
   notes: zod.string().nullish(),
   createdAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Delete a salary record
+ */
+export const DeleteSalaryParams = zod.object({
+  salaryId: zod.coerce.string(),
+});
+
+export const DeleteSalaryResponse = zod.object({
+  message: zod.string(),
+});
+
+/**
+ * @summary Update a sale
+ */
+export const UpdateSaleParams = zod.object({
+  saleId: zod.coerce.string(),
+});
+
+export const UpdateSaleBody = zod.object({
+  batchId: zod.string().optional(),
+  quantity: zod.number(),
+  unitPrice: zod.number(),
+  buyerName: zod.string(),
+  saleDate: zod.coerce.date(),
+  type: zod.string(),
+  notes: zod.string().optional(),
+});
+
+export const UpdateSaleResponse = zod.object({
+  id: zod.string(),
+  batchId: zod.string().nullish(),
+  batchName: zod.string().nullish(),
+  quantity: zod.number(),
+  unitPrice: zod.number(),
+  totalAmount: zod.number(),
+  buyerName: zod.string(),
+  saleDate: zod.coerce.date(),
+  type: zod.string(),
+  notes: zod.string().nullish(),
+  tenantId: zod.string(),
+  createdAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Delete a sale
+ */
+export const DeleteSaleParams = zod.object({
+  saleId: zod.coerce.string(),
+});
+
+export const DeleteSaleResponse = zod.object({
+  message: zod.string(),
+});
+
+/**
+ * @summary Update a stock item
+ */
+export const UpdateStockItemParams = zod.object({
+  stockId: zod.coerce.string(),
+});
+
+export const UpdateStockItemBody = zod.object({
+  name: zod.string(),
+  category: zod.string(),
+  quantity: zod.number(),
+  unit: zod.string(),
+  minimumLevel: zod.number(),
+  unitPrice: zod.number(),
+});
+
+export const UpdateStockItemResponse = zod.object({
+  id: zod.string(),
+  name: zod.string(),
+  category: zod.string(),
+  quantity: zod.number(),
+  unit: zod.string(),
+  minimumLevel: zod.number(),
+  currentValue: zod.number(),
+  tenantId: zod.string(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Delete a stock item
+ */
+export const DeleteStockItemParams = zod.object({
+  stockId: zod.coerce.string(),
+});
+
+export const DeleteStockItemResponse = zod.object({
+  message: zod.string(),
+});
+
+/**
+ * @summary Update an expense
+ */
+export const UpdateExpenseParams = zod.object({
+  expenseId: zod.coerce.string(),
+});
+
+export const UpdateExpenseBody = zod.object({
+  category: zod.string(),
+  description: zod.string(),
+  amount: zod.number(),
+  date: zod.coerce.date(),
+  batchId: zod.string().optional(),
+  farmId: zod.string().optional(),
+});
+
+export const UpdateExpenseResponse = zod.object({
+  id: zod.string(),
+  category: zod.string(),
+  description: zod.string(),
+  amount: zod.number(),
+  date: zod.coerce.date(),
+  batchId: zod.string().nullish(),
+  farmId: zod.string().nullish(),
+  tenantId: zod.string(),
+  createdAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Delete an expense
+ */
+export const DeleteExpenseParams = zod.object({
+  expenseId: zod.coerce.string(),
+});
+
+export const DeleteExpenseResponse = zod.object({
+  message: zod.string(),
+});
+
+/**
+ * @summary Toggle user active status
+ */
+export const ToggleUserActiveParams = zod.object({
+  userId: zod.coerce.string(),
+});
+
+export const ToggleUserActiveResponse = zod.object({
+  id: zod.string(),
+  isActive: zod.boolean(),
+  message: zod.string(),
+});
+
+/**
+ * @summary List egg production records
+ */
+export const listEggProductionsQueryPageDefault = 1;
+export const listEggProductionsQueryLimitDefault = 50;
+
+export const ListEggProductionsQueryParams = zod.object({
+  batchId: zod.coerce.string().optional(),
+  startDate: zod.date().optional(),
+  endDate: zod.date().optional(),
+  page: zod.coerce.number().default(listEggProductionsQueryPageDefault),
+  limit: zod.coerce.number().default(listEggProductionsQueryLimitDefault),
+});
+
+export const ListEggProductionsResponse = zod.object({
+  data: zod.array(
+    zod.object({
+      id: zod.string(),
+      batchId: zod.string(),
+      farmId: zod.string(),
+      date: zod.coerce.date(),
+      eggsCollected: zod.number(),
+      brokenEggs: zod.number(),
+      soldEggs: zod.number(),
+      stockEggs: zod.number(),
+      cratesCount: zod.number(),
+      notes: zod.string().optional(),
+      createdAt: zod.coerce.date().optional(),
+    }),
+  ),
+  total: zod.number(),
+  page: zod.number(),
+  limit: zod.number(),
+});
+
+/**
+ * @summary Create an egg production record
+ */
+export const CreateEggProductionBody = zod.object({
+  batchId: zod.string(),
+  farmId: zod.string(),
+  date: zod.coerce.date(),
+  eggsCollected: zod.number(),
+  brokenEggs: zod.number().optional(),
+  soldEggs: zod.number().optional(),
+  stockEggs: zod.number().optional(),
+  cratesCount: zod.number().optional(),
+  notes: zod.string().optional(),
+});
+
+/**
+ * @summary Update an egg production record
+ */
+export const UpdateEggProductionParams = zod.object({
+  eggId: zod.coerce.string(),
+});
+
+export const UpdateEggProductionBody = zod.object({
+  batchId: zod.string(),
+  farmId: zod.string(),
+  date: zod.coerce.date(),
+  eggsCollected: zod.number(),
+  brokenEggs: zod.number().optional(),
+  soldEggs: zod.number().optional(),
+  stockEggs: zod.number().optional(),
+  cratesCount: zod.number().optional(),
+  notes: zod.string().optional(),
+});
+
+export const UpdateEggProductionResponse = zod.object({
+  id: zod.string(),
+  batchId: zod.string(),
+  farmId: zod.string(),
+  date: zod.coerce.date(),
+  eggsCollected: zod.number(),
+  brokenEggs: zod.number(),
+  soldEggs: zod.number(),
+  stockEggs: zod.number(),
+  cratesCount: zod.number(),
+  notes: zod.string().optional(),
+  createdAt: zod.coerce.date().optional(),
+});
+
+/**
+ * @summary Delete an egg production record
+ */
+export const DeleteEggProductionParams = zod.object({
+  eggId: zod.coerce.string(),
+});
+
+export const DeleteEggProductionResponse = zod.object({
+  message: zod.string(),
 });
 
 /**

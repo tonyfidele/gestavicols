@@ -18,6 +18,7 @@ import Customers from "./pages/customers/index";
 import HR from "./pages/hr/index";
 import Analytics from "./pages/analytics/index";
 import Veterinary from "./pages/veterinary/index";
+import Eggs from "./pages/eggs/index";
 import NotFound from "./pages/not-found";
 
 const originalFetch = window.fetch;
@@ -60,6 +61,7 @@ function Router() {
       <Route path="/customers" component={Customers} />
       <Route path="/hr" component={HR} />
       <Route path="/analytics" component={Analytics} />
+      <Route path="/eggs" component={Eggs} />
       <Route path="/users" component={Users} />
       <Route path="/audit" component={Audit} />
       <Route component={NotFound} />
