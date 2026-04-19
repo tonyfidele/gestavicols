@@ -314,6 +314,7 @@ router.post(
       .values({
         id: randomUUID(),
         batchId: params.data.batchId,
+        tenantId: user.tenantId,
         recordedBy: user.userId,
         ...parsed.data,
       })
@@ -397,6 +398,7 @@ router.post(
       .values({
         id: randomUUID(),
         batchId: params.data.batchId,
+        tenantId: user.tenantId,
         veterinarianName: user.name,
         ...parsed.data,
       })
