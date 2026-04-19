@@ -70,7 +70,7 @@ export default function Dashboard() {
               <BarChart data={financials} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} />
-                <YAxis axisLine={false} tickLine={false} tickFormatter={(val) => `€${val}`} />
+                <YAxis axisLine={false} tickLine={false} tickFormatter={(val) => `${Number(val).toLocaleString("fr-ML")} F`} />
                 <Tooltip cursor={{fill: '#f8fafc'}} formatter={(value: number) => formatCurrency(value)} />
                 <Bar dataKey="amount" radius={[6, 6, 0, 0]} />
               </BarChart>
