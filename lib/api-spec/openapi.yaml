@@ -1932,6 +1932,9 @@ components:
         minimumLevel:
           type: number
           format: float
+        unitPrice:
+          type: number
+          format: float
         currentValue:
           type: number
           format: float
@@ -1947,6 +1950,7 @@ components:
         - quantity
         - unit
         - minimumLevel
+        - unitPrice
         - currentValue
         - tenantId
         - updatedAt

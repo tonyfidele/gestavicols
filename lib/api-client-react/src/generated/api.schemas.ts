@@ -253,6 +253,7 @@ export interface Stock {
   quantity: number;
   unit: string;
   minimumLevel: number;
+  unitPrice: number;
   currentValue: number;
   tenantId: string;
   updatedAt: string;
