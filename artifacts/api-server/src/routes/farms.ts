@@ -381,7 +381,7 @@ router.post(
 
     const [building] = await db
       .insert(buildingsTable)
-      .values({ id: randomUUID(), farmId: params.data.farmId, ...parsed.data })
+      .values({ id: randomUUID(), farmId: params.data.farmId, tenantId: user.tenantId, ...parsed.data })
       .returning();
 
     await logAudit(user, "CREATE_BUILDING", "BUILDING", building.id);

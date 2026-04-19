@@ -7,6 +7,7 @@ import { AuthProvider } from "@/lib/auth-context";
 import Login from "./pages/login";
 import Dashboard from "./pages/dashboard";
 import Farms from "./pages/farms/index";
+import FarmDetail from "./pages/farms/[id]";
 import Batches from "./pages/batches/index";
 import BatchDetail from "./pages/batches/[id]";
 import Sales from "./pages/sales/index";
@@ -52,6 +53,7 @@ function Router() {
       <Route path="/login" component={Login} />
       <Route path="/" component={Dashboard} />
       <Route path="/farms" component={Farms} />
+      <Route path="/farms/:id" component={FarmDetail} />
       <Route path="/batches" component={Batches} />
       <Route path="/batches/:id" component={BatchDetail} />
       <Route path="/sales" component={Sales} />

@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { AppLayout } from "@/components/layout/app-layout";
 import { useListFarms, useCreateFarm, useDeleteFarm } from "@workspace/api-client-react";
-import { MapPin, Users, Tractor, Plus, Loader2, Trash2, AlertTriangle } from "lucide-react";
+import { MapPin, Users, Tractor, Plus, Loader2, Trash2, AlertTriangle, CheckCircle, XCircle, ChevronRight } from "lucide-react";
+import { Link } from "wouter";
 import { toast } from "sonner";
 
 type Farm = {
@@ -51,44 +52,63 @@ export default function Farms() {
         <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-          {farmsData?.data.map((farm) => (
-            <div key={farm.id} className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm hover:shadow-xl hover:border-primary/30 transition-all duration-300 group relative">
-              <button
-                onClick={() => setDeleteTarget(farm as Farm)}
-                className="absolute top-4 right-4 p-2 rounded-xl text-slate-300 hover:text-red-500 hover:bg-red-50 transition-colors opacity-0 group-hover:opacity-100"
-                title="Supprimer la ferme"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
+          {farmsData?.data.map((farm) => {
+            const isActive = (farm.activeBatchesCount > 0) || (farm.buildingsCount > 0);
+            return (
+              <div key={farm.id} className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm hover:shadow-xl hover:border-primary/30 transition-all duration-300 group relative">
+                <button
+                  onClick={() => setDeleteTarget(farm as Farm)}
+                  className="absolute top-4 right-12 p-2 rounded-xl text-slate-300 hover:text-red-500 hover:bg-red-50 transition-colors opacity-0 group-hover:opacity-100"
+                  title="Supprimer la ferme"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+                <Link href={`/farms/${farm.id}`} className="absolute top-4 right-4 p-2 rounded-xl text-slate-300 hover:text-primary hover:bg-emerald-50 transition-colors" title="Voir le détail">
+                  <ChevronRight className="w-4 h-4" />
+                </Link>
 
-              <div className="w-12 h-12 rounded-xl bg-emerald-50 text-primary flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                <Tractor className="w-6 h-6" />
-              </div>
-              <h3 className="text-xl font-bold text-slate-900 mb-2 pr-8">{farm.name}</h3>
+                <div className="flex items-start gap-3 mb-4">
+                  <div className="w-12 h-12 rounded-xl bg-emerald-50 text-primary flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0">
+                    <Tractor className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-slate-900 pr-16">{farm.name}</h3>
+                    {isActive ? (
+                      <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 mt-1">
+                        <CheckCircle className="w-3 h-3" /> Actif
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 mt-1">
+                        <XCircle className="w-3 h-3" /> Inactif
+                      </span>
+                    )}
+                  </div>
+                </div>
 
-              <div className="space-y-2 mt-4">
-                <div className="flex items-center gap-3 text-slate-600 text-sm">
-                  <MapPin className="w-4 h-4 text-slate-400" />
-                  {farm.location}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-3 text-slate-600 text-sm">
+                    <MapPin className="w-4 h-4 text-slate-400" />
+                    {farm.location}
+                  </div>
+                  <div className="flex items-center gap-3 text-slate-600 text-sm">
+                    <Users className="w-4 h-4 text-slate-400" />
+                    Capacité: {farm.capacity.toLocaleString()}
+                  </div>
                 </div>
-                <div className="flex items-center gap-3 text-slate-600 text-sm">
-                  <Users className="w-4 h-4 text-slate-400" />
-                  Capacité: {farm.capacity.toLocaleString()}
-                </div>
-              </div>
 
-              <div className="mt-6 pt-6 border-t border-slate-100 flex justify-between items-center">
-                <div className="text-center">
-                  <p className="text-2xl font-bold text-slate-800">{farm.buildingsCount}</p>
-                  <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Bâtiments</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-2xl font-bold text-indigo-600">{farm.activeBatchesCount}</p>
-                  <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Lots en cours</p>
+                <div className="mt-6 pt-6 border-t border-slate-100 flex justify-between items-center">
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-slate-800">{farm.buildingsCount}</p>
+                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Bâtiments</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-indigo-600">{farm.activeBatchesCount}</p>
+                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Lots en cours</p>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
           {(!farmsData?.data || farmsData.data.length === 0) && (
             <div className="col-span-full py-16 text-center bg-white rounded-2xl border border-dashed border-slate-300">
               <Tractor className="w-12 h-12 text-slate-300 mx-auto mb-4" />
