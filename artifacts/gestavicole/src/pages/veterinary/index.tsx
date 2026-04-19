@@ -120,7 +120,7 @@ function CreateVetRecordModal({ batchId, onClose, onSuccess }: { batchId: string
 function BatchVetRecords({ batchId, batchName }: { batchId: string; batchName: string }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const { data, refetch } = useListVeterinaryRecords({ batchId }, { enabled: isOpen });
+  const { data, refetch } = useListVeterinaryRecords(batchId, { query: { enabled: isOpen } });
 
   const typeIcon = (type: string) => {
     if (type === "VACCIN") return <Syringe className="w-4 h-4 text-blue-500" />;
