@@ -1,9 +1,10 @@
-import React from "react";
+import React, { useState } from "react";
 import { AppLayout } from "@/components/layout/app-layout";
-import { useListAuditLogs } from "@workspace/api-client-react";
-import { ShieldAlert, Loader2 } from "lucide-react";
+import { useListAuditLogs, useClearAuditLogs } from "@workspace/api-client-react";
+import { ShieldAlert, Loader2, Trash2, AlertTriangle } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { toast } from "sonner";
 
 const getActionColor = (action: string) => {
   if (action.includes("CREATE")) return "bg-emerald-100 text-emerald-700 border-emerald-200";
@@ -23,13 +24,39 @@ const getEntityLabel = (entity: string) => {
 };
 
 export default function Audit() {
-  const { data: auditData, isLoading } = useListAuditLogs({ limit: 50 });
+  const [showConfirm, setShowConfirm] = useState(false);
+  const { data: auditData, isLoading, refetch } = useListAuditLogs({ limit: 50 });
+  const { mutate: clearLogs, isPending: isClearing } = useClearAuditLogs();
+
+  const handleClear = () => {
+    clearLogs(undefined, {
+      onSuccess: () => {
+        toast.success("Journal d'audit vidé avec succès");
+        setShowConfirm(false);
+        refetch();
+      },
+      onError: () => {
+        toast.error("Erreur lors de la suppression du journal");
+        setShowConfirm(false);
+      },
+    });
+  };
 
   return (
     <AppLayout>
-      <div className="mb-8">
-        <h1 className="text-3xl font-display font-bold text-slate-900">Journal d'audit</h1>
-        <p className="text-slate-500 mt-1">Historique de toutes les actions sensibles</p>
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-3xl font-display font-bold text-slate-900">Journal d'audit</h1>
+          <p className="text-slate-500 mt-1">Historique de toutes les actions sensibles</p>
+        </div>
+        {(auditData?.total ?? 0) > 0 && (
+          <button
+            onClick={() => setShowConfirm(true)}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 font-medium text-sm border border-red-200 transition-colors"
+          >
+            <Trash2 className="w-4 h-4" /> Vider le journal
+          </button>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
@@ -89,6 +116,42 @@ export default function Audit() {
               <p className="text-slate-500 font-medium">Aucun événement dans le journal d'audit</p>
             </div>
           )}
+        </div>
+      )}
+
+      {showConfirm && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 animate-in fade-in zoom-in duration-200">
+            <div className="flex items-start gap-4 mb-5">
+              <div className="w-12 h-12 bg-red-100 rounded-2xl flex items-center justify-center shrink-0">
+                <AlertTriangle className="w-6 h-6 text-red-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-slate-900 mb-1">Vider le journal d'audit</h3>
+                <p className="text-slate-600 text-sm">
+                  Cette action supprimera définitivement les <strong>{auditData?.total}</strong> enregistrement(s) du journal. Elle est irréversible.
+                </p>
+              </div>
+            </div>
+            <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 mb-6">
+              <p className="text-sm text-red-700 font-medium">⚠ Toutes les traces d'activité seront perdues.</p>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowConfirm(false)}
+                className="flex-1 py-2.5 border border-slate-200 rounded-xl text-slate-700 hover:bg-slate-50 font-medium transition-colors"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleClear}
+                disabled={isClearing}
+                className="flex-1 py-2.5 bg-red-600 text-white rounded-xl hover:bg-red-700 font-medium transition-colors disabled:opacity-50"
+              >
+                {isClearing ? "Suppression..." : "Vider définitivement"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </AppLayout>

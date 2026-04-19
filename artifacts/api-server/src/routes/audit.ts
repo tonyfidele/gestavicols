@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, and, count } from "drizzle-orm";
+import { eq, and, count, sql } from "drizzle-orm";
 import { db } from "@workspace/db";
 import { auditLogsTable, usersTable } from "@workspace/db";
 import {
@@ -58,6 +58,21 @@ router.get(
         limit,
       })
     );
+  }
+);
+
+router.delete(
+  "/audit-logs",
+  requireAuth,
+  requirePermission("AUDIT", "DELETE"),
+  async (req, res): Promise<void> => {
+    const user = req.user!;
+    if (user.role === "SUPER_ADMIN") {
+      await db.delete(auditLogsTable);
+    } else {
+      await db.delete(auditLogsTable).where(eq(auditLogsTable.tenantId, user.tenantId));
+    }
+    res.json({ message: "Journal d'audit vidé avec succès" });
   }
 );
 

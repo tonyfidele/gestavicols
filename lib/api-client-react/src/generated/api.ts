@@ -3032,6 +3032,24 @@ export function useListAuditLogs<
 }
 
 /**
+ * @summary Clear all audit logs
+ */
+export const clearAuditLogs = async (options?: RequestInit): Promise<{ message: string }> => {
+  return customFetch<{ message: string }>("/api/audit-logs", {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const useClearAuditLogs = <TError = ErrorType<unknown>, TContext = unknown>(options?: {
+  mutation?: UseMutationOptions<Awaited<ReturnType<typeof clearAuditLogs>>, TError, void, TContext>;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<Awaited<ReturnType<typeof clearAuditLogs>>, TError, void, TContext> => {
+  const mutationFn = () => clearAuditLogs(options?.request as RequestInit | undefined);
+  return useMutation({ mutationFn, ...options?.mutation });
+};
+
+/**
  * @summary List customers
  */
 export const getListCustomersUrl = (params?: ListCustomersParams) => {
