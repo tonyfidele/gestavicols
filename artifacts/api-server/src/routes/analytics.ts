@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, and, gte, lte, sql, sum, count } from "drizzle-orm";
+import { eq, and, gte, lte, sql, sum, count, isNull } from "drizzle-orm";
 import { db } from "@workspace/db";
 import {
   batchesTable,
@@ -26,6 +26,9 @@ router.get(
     const salesConditions = user.role !== "SUPER_ADMIN" ? [eq(salesTable.tenantId, user.tenantId)] : [];
     const expenseConditions = user.role !== "SUPER_ADMIN" ? [eq(expensesTable.tenantId, user.tenantId)] : [];
     const dailyConditions = user.role !== "SUPER_ADMIN" ? [eq(dailyRecordsTable.tenantId, user.tenantId)] : [];
+
+    salesConditions.push(isNull(salesTable.deletedAt));
+    expenseConditions.push(isNull(expensesTable.deletedAt));
 
     salesConditions.push(gte(salesTable.saleDate, startDate));
     salesConditions.push(lte(salesTable.saleDate, endDate));
@@ -74,7 +77,12 @@ router.get(
           eq(batchesTable.status, "ACTIF")
         )
       )
-      .where(user.role !== "SUPER_ADMIN" ? eq(farmsTable.tenantId, user.tenantId) : sql`1=1`)
+      .where(
+        and(
+          user.role !== "SUPER_ADMIN" ? eq(farmsTable.tenantId, user.tenantId) : sql`1=1`,
+          isNull(farmsTable.deletedAt)
+        )
+      )
       .groupBy(farmsTable.id, farmsTable.name)
       .limit(10);
 
@@ -85,7 +93,10 @@ router.get(
         transactions: count(salesTable.id),
       })
       .from(salesTable)
-      .where(and(...(user.role !== "SUPER_ADMIN" ? [eq(salesTable.tenantId, user.tenantId)] : [])))
+      .where(and(
+        ...(user.role !== "SUPER_ADMIN" ? [eq(salesTable.tenantId, user.tenantId)] : []),
+        isNull(salesTable.deletedAt)
+      ))
       .groupBy(sql`to_char(${salesTable.saleDate}::date, 'YYYY-MM')`)
       .orderBy(sql`to_char(${salesTable.saleDate}::date, 'YYYY-MM')`)
       .limit(12);
@@ -97,7 +108,10 @@ router.get(
         category: expensesTable.category,
       })
       .from(expensesTable)
-      .where(and(...(user.role !== "SUPER_ADMIN" ? [eq(expensesTable.tenantId, user.tenantId)] : [])))
+      .where(and(
+        ...(user.role !== "SUPER_ADMIN" ? [eq(expensesTable.tenantId, user.tenantId)] : []),
+        isNull(expensesTable.deletedAt)
+      ))
       .groupBy(sql`to_char(${expensesTable.date}::date, 'YYYY-MM')`, expensesTable.category)
       .orderBy(sql`to_char(${expensesTable.date}::date, 'YYYY-MM')`)
       .limit(60);
