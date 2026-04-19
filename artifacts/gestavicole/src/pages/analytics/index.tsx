@@ -1,7 +1,11 @@
 import React, { useState } from "react";
 import { AppLayout } from "@/components/layout/app-layout";
 import { useGetAnalytics } from "@workspace/api-client-react";
-import { TrendingUp, TrendingDown, DollarSign, AlertTriangle, Loader2, BarChart3, Egg, Beef } from "lucide-react";
+import { TrendingUp, TrendingDown, DollarSign, AlertTriangle, Loader2, BarChart3, Egg, Beef, FileText } from "lucide-react";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   LineChart, Line, PieChart, Pie, Cell, Legend, AreaChart, Area
@@ -78,6 +82,127 @@ export default function Analytics() {
     }));
   }, [data]);
 
+  const handleExportPdf = () => {
+    if (!data) return;
+    const doc = new jsPDF({ orientation: "portrait" });
+    const pageW = doc.internal.pageSize.width;
+    const dateRange = `${format(new Date(startDate), "dd/MM/yyyy")} — ${format(new Date(endDate), "dd/MM/yyyy")}`;
+    const generatedAt = format(new Date(), "dd MMMM yyyy 'à' HH:mm", { locale: fr });
+
+    doc.setFillColor(16, 185, 129);
+    doc.rect(0, 0, pageW, 40, "F");
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(22);
+    doc.text("GESTAVICOLE", 14, 18);
+    doc.setFontSize(13);
+    doc.text("Rapport Analytics", 14, 28);
+    doc.setFontSize(9);
+    doc.text(`Période : ${dateRange}`, 14, 36);
+    doc.text(`Généré le ${generatedAt}`, pageW - 14, 36, { align: "right" });
+
+    doc.setTextColor(15, 23, 42);
+    doc.setFontSize(13);
+    doc.text("Indicateurs Clés de Performance", 14, 52);
+
+    autoTable(doc, {
+      startY: 56,
+      head: [["Indicateur", "Valeur"]],
+      body: [
+        ["Revenus Totaux", `${data.summary.totalRevenue.toLocaleString("fr-ML")} FCFA`],
+        ["Dépenses Totales", `${data.summary.totalExpenses.toLocaleString("fr-ML")} FCFA`],
+        ["Bénéfice Net", `${data.summary.netProfit.toLocaleString("fr-ML")} FCFA`],
+        ["ROI", `${data.summary.roi}%`],
+        ["Transactions", `${data.summary.totalTransactions}`],
+        ["Mortalité totale", `${data.summary.totalMortality.toLocaleString("fr-ML")} animaux`],
+        ["Aliment consommé", `${(data.summary.totalFeedConsumed ?? 0).toLocaleString("fr-ML")} kg`],
+        ["Œufs collectés", `${(data.summary.totalEggsCollected ?? 0).toLocaleString("fr-ML")}`],
+      ],
+      styles: { fontSize: 10, cellPadding: 4 },
+      headStyles: { fillColor: [16, 185, 129], textColor: 255, fontStyle: "bold" },
+      alternateRowStyles: { fillColor: [248, 250, 252] },
+      columnStyles: { 0: { fontStyle: "bold", cellWidth: 80 }, 1: { halign: "right" } },
+      margin: { left: 14, right: 14 },
+    });
+
+    const afterKpi = (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 10;
+
+    if (mergedMonthlyData.length > 0) {
+      doc.setFontSize(13);
+      doc.text("Évolution Mensuelle", 14, afterKpi);
+      autoTable(doc, {
+        startY: afterKpi + 4,
+        head: [["Mois", "Revenus (FCFA)", "Dépenses (FCFA)", "Bénéfice (FCFA)"]],
+        body: mergedMonthlyData.map(m => [
+          m.month,
+          m.revenus.toLocaleString("fr-ML"),
+          m.depenses.toLocaleString("fr-ML"),
+          m.benefice.toLocaleString("fr-ML"),
+        ]),
+        styles: { fontSize: 9, cellPadding: 3 },
+        headStyles: { fillColor: [59, 130, 246], textColor: 255, fontStyle: "bold" },
+        alternateRowStyles: { fillColor: [248, 250, 252] },
+        columnStyles: { 1: { halign: "right" }, 2: { halign: "right" }, 3: { halign: "right" } },
+        margin: { left: 14, right: 14 },
+      });
+    }
+
+    const afterMonthly = (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 10;
+
+    if (expensePieData.length > 0) {
+      if (afterMonthly > 220) doc.addPage();
+      const startY = afterMonthly > 220 ? 20 : afterMonthly;
+      doc.setFontSize(13);
+      doc.text("Répartition des Dépenses par Catégorie", 14, startY);
+      autoTable(doc, {
+        startY: startY + 4,
+        head: [["Catégorie", "Montant (FCFA)", "Part (%)"]],
+        body: expensePieData.map(e => [
+          e.name,
+          e.value.toLocaleString("fr-ML"),
+          `${((e.value / data.summary.totalExpenses) * 100).toFixed(1)}%`,
+        ]),
+        styles: { fontSize: 9, cellPadding: 3 },
+        headStyles: { fillColor: [245, 158, 11], textColor: 255, fontStyle: "bold" },
+        alternateRowStyles: { fillColor: [248, 250, 252] },
+        columnStyles: { 1: { halign: "right" }, 2: { halign: "right" } },
+        margin: { left: 14, right: 14 },
+      });
+    }
+
+    if (data.farmPerformance.length > 0) {
+      const afterExp = (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 10;
+      if (afterExp > 220) doc.addPage();
+      const startY2 = afterExp > 220 ? 20 : afterExp;
+      doc.setFontSize(13);
+      doc.text("Performance par Ferme", 14, startY2);
+      autoTable(doc, {
+        startY: startY2 + 4,
+        head: [["Ferme", "Lots actifs", "Animaux", "Mortalité moy."]],
+        body: data.farmPerformance.map(f => [
+          f.farmName,
+          f.activeBatches,
+          f.totalAnimals.toLocaleString("fr-ML"),
+          `${f.avgMortality.toFixed(1)}%`,
+        ]),
+        styles: { fontSize: 9, cellPadding: 3 },
+        headStyles: { fillColor: [139, 92, 246], textColor: 255, fontStyle: "bold" },
+        alternateRowStyles: { fillColor: [248, 250, 252] },
+        columnStyles: { 1: { halign: "center" }, 2: { halign: "right" }, 3: { halign: "center" } },
+        margin: { left: 14, right: 14 },
+      });
+    }
+
+    const pageCount = (doc.internal as { getNumberOfPages: () => number }).getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.setTextColor(148, 163, 184);
+      doc.text(`Page ${i} / ${pageCount}`, pageW / 2, doc.internal.pageSize.height - 8, { align: "center" });
+    }
+
+    doc.save(`rapport_analytics_${format(new Date(), "yyyy-MM-dd")}.pdf`);
+  };
+
   return (
     <AppLayout>
       <div className="flex justify-between items-center mb-8 flex-wrap gap-4">
@@ -99,6 +224,14 @@ export default function Analytics() {
             onChange={(e) => setEndDate(e.target.value)}
             className="px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
           />
+          <button
+            onClick={handleExportPdf}
+            disabled={isLoading || !data}
+            className="flex items-center gap-2 border border-slate-200 bg-white hover:bg-red-50 hover:text-red-700 hover:border-red-200 text-slate-700 px-4 py-2 rounded-xl font-medium transition-all disabled:opacity-40 shadow-sm text-sm"
+          >
+            <FileText className="w-4 h-4 text-red-500" />
+            Télécharger PDF
+          </button>
         </div>
       </div>
 
