@@ -9,6 +9,9 @@ import stockRouter from "./stock";
 import expensesRouter from "./expenses";
 import dashboardRouter from "./dashboard";
 import auditRouter from "./audit";
+import customersRouter from "./customers";
+import salariesRouter from "./salaries";
+import analyticsRouter from "./analytics";
 
 const router: IRouter = Router();
 
@@ -22,5 +25,8 @@ router.use(stockRouter);
 router.use(expensesRouter);
 router.use(dashboardRouter);
 router.use(auditRouter);
+router.use(customersRouter);
+router.use(salariesRouter);
+router.use(analyticsRouter);
 
 export default router;

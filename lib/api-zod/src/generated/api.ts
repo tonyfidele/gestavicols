@@ -747,3 +747,218 @@ export const ListAuditLogsResponse = zod.object({
   page: zod.number(),
   limit: zod.number(),
 });
+
+/**
+ * @summary List customers
+ */
+export const listCustomersQueryPageDefault = 1;
+export const listCustomersQueryLimitDefault = 50;
+
+export const ListCustomersQueryParams = zod.object({
+  search: zod.coerce.string().optional(),
+  page: zod.coerce.number().default(listCustomersQueryPageDefault),
+  limit: zod.coerce.number().default(listCustomersQueryLimitDefault),
+});
+
+export const ListCustomersResponse = zod.object({
+  data: zod.array(
+    zod.object({
+      id: zod.string(),
+      tenantId: zod.string(),
+      name: zod.string(),
+      phone: zod.string().nullish(),
+      email: zod.string().nullish(),
+      address: zod.string().nullish(),
+      type: zod.enum(["PARTICULIER", "ENTREPRISE"]),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+  total: zod.number(),
+  page: zod.number(),
+  limit: zod.number(),
+});
+
+/**
+ * @summary Create a customer
+ */
+export const CreateCustomerBody = zod.object({
+  name: zod.string(),
+  phone: zod.string().optional(),
+  email: zod.string().optional(),
+  address: zod.string().optional(),
+  type: zod.enum(["PARTICULIER", "ENTREPRISE"]).optional(),
+});
+
+/**
+ * @summary Update a customer
+ */
+export const UpdateCustomerParams = zod.object({
+  customerId: zod.coerce.string(),
+});
+
+export const UpdateCustomerBody = zod.object({
+  name: zod.string().optional(),
+  phone: zod.string().optional(),
+  email: zod.string().optional(),
+  address: zod.string().optional(),
+  type: zod.enum(["PARTICULIER", "ENTREPRISE"]).optional(),
+});
+
+export const UpdateCustomerResponse = zod.object({
+  id: zod.string(),
+  tenantId: zod.string(),
+  name: zod.string(),
+  phone: zod.string().nullish(),
+  email: zod.string().nullish(),
+  address: zod.string().nullish(),
+  type: zod.enum(["PARTICULIER", "ENTREPRISE"]),
+  createdAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Delete a customer
+ */
+export const DeleteCustomerParams = zod.object({
+  customerId: zod.coerce.string(),
+});
+
+export const DeleteCustomerResponse = zod.object({
+  message: zod.string(),
+});
+
+/**
+ * @summary List salary records
+ */
+export const listSalariesQueryPageDefault = 1;
+export const listSalariesQueryLimitDefault = 50;
+
+export const ListSalariesQueryParams = zod.object({
+  month: zod.coerce.number().optional(),
+  year: zod.coerce.number().optional(),
+  page: zod.coerce.number().default(listSalariesQueryPageDefault),
+  limit: zod.coerce.number().default(listSalariesQueryLimitDefault),
+});
+
+export const ListSalariesResponse = zod.object({
+  data: zod.array(
+    zod.object({
+      id: zod.string(),
+      tenantId: zod.string(),
+      userId: zod.string(),
+      userName: zod.string().nullish(),
+      userRole: zod.string().nullish(),
+      month: zod.number(),
+      year: zod.number(),
+      baseSalary: zod.number(),
+      bonuses: zod.number(),
+      deductions: zod.number(),
+      netSalary: zod.number(),
+      paymentDate: zod.string().nullish(),
+      paymentStatus: zod.enum(["EN_ATTENTE", "PAYE", "ANNULE"]),
+      notes: zod.string().nullish(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+  total: zod.number(),
+  page: zod.number(),
+  limit: zod.number(),
+});
+
+/**
+ * @summary Create a salary record
+ */
+export const CreateSalaryBody = zod.object({
+  userId: zod.string(),
+  month: zod.number(),
+  year: zod.number(),
+  baseSalary: zod.number(),
+  bonuses: zod.number().optional(),
+  deductions: zod.number().optional(),
+  paymentDate: zod.string().optional(),
+  paymentStatus: zod.enum(["EN_ATTENTE", "PAYE", "ANNULE"]).optional(),
+  notes: zod.string().optional(),
+});
+
+/**
+ * @summary Update a salary record
+ */
+export const UpdateSalaryParams = zod.object({
+  salaryId: zod.coerce.string(),
+});
+
+export const UpdateSalaryBody = zod.object({
+  baseSalary: zod.number().optional(),
+  bonuses: zod.number().optional(),
+  deductions: zod.number().optional(),
+  paymentDate: zod.string().optional(),
+  paymentStatus: zod.enum(["EN_ATTENTE", "PAYE", "ANNULE"]).optional(),
+  notes: zod.string().optional(),
+});
+
+export const UpdateSalaryResponse = zod.object({
+  id: zod.string(),
+  tenantId: zod.string(),
+  userId: zod.string(),
+  userName: zod.string().nullish(),
+  userRole: zod.string().nullish(),
+  month: zod.number(),
+  year: zod.number(),
+  baseSalary: zod.number(),
+  bonuses: zod.number(),
+  deductions: zod.number(),
+  netSalary: zod.number(),
+  paymentDate: zod.string().nullish(),
+  paymentStatus: zod.enum(["EN_ATTENTE", "PAYE", "ANNULE"]),
+  notes: zod.string().nullish(),
+  createdAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Get analytics data
+ */
+export const GetAnalyticsQueryParams = zod.object({
+  startDate: zod.date().optional(),
+  endDate: zod.date().optional(),
+});
+
+export const GetAnalyticsResponse = zod.object({
+  summary: zod.object({
+    totalRevenue: zod.number(),
+    totalExpenses: zod.number(),
+    netProfit: zod.number(),
+    roi: zod.number(),
+    totalTransactions: zod.number(),
+    totalMortality: zod.number(),
+    totalFeedConsumed: zod.number(),
+    totalEggsCollected: zod.number(),
+  }),
+  farmPerformance: zod.array(
+    zod.object({
+      farmId: zod.string(),
+      farmName: zod.string(),
+      activeBatches: zod.number(),
+      totalAnimals: zod.number(),
+      avgMortality: zod.number(),
+    }),
+  ),
+  monthlySales: zod.array(
+    zod.object({
+      month: zod.string(),
+      revenue: zod.number(),
+      transactions: zod.number(),
+    }),
+  ),
+  monthlyExpenses: zod.array(
+    zod.object({
+      month: zod.string(),
+      amount: zod.number(),
+      category: zod.string(),
+    }),
+  ),
+  expensesByCategory: zod.array(
+    zod.object({
+      category: zod.string(),
+      total: zod.number(),
+    }),
+  ),
+});

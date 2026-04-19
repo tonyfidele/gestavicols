@@ -371,6 +371,180 @@ export interface AuditLogListResponse {
   limit: number;
 }
 
+export type CustomerType = (typeof CustomerType)[keyof typeof CustomerType];
+
+export const CustomerType = {
+  PARTICULIER: "PARTICULIER",
+  ENTREPRISE: "ENTREPRISE",
+} as const;
+
+export interface Customer {
+  id: string;
+  tenantId: string;
+  name: string;
+  phone?: string | null;
+  email?: string | null;
+  address?: string | null;
+  type: CustomerType;
+  createdAt: string;
+}
+
+export interface CustomerListResponse {
+  data: Customer[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+export type CreateCustomerRequestType =
+  (typeof CreateCustomerRequestType)[keyof typeof CreateCustomerRequestType];
+
+export const CreateCustomerRequestType = {
+  PARTICULIER: "PARTICULIER",
+  ENTREPRISE: "ENTREPRISE",
+} as const;
+
+export interface CreateCustomerRequest {
+  name: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+  type?: CreateCustomerRequestType;
+}
+
+export type UpdateCustomerRequestType =
+  (typeof UpdateCustomerRequestType)[keyof typeof UpdateCustomerRequestType];
+
+export const UpdateCustomerRequestType = {
+  PARTICULIER: "PARTICULIER",
+  ENTREPRISE: "ENTREPRISE",
+} as const;
+
+export interface UpdateCustomerRequest {
+  name?: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+  type?: UpdateCustomerRequestType;
+}
+
+export type SalaryPaymentStatus =
+  (typeof SalaryPaymentStatus)[keyof typeof SalaryPaymentStatus];
+
+export const SalaryPaymentStatus = {
+  EN_ATTENTE: "EN_ATTENTE",
+  PAYE: "PAYE",
+  ANNULE: "ANNULE",
+} as const;
+
+export interface Salary {
+  id: string;
+  tenantId: string;
+  userId: string;
+  userName?: string | null;
+  userRole?: string | null;
+  month: number;
+  year: number;
+  baseSalary: number;
+  bonuses: number;
+  deductions: number;
+  netSalary: number;
+  paymentDate?: string | null;
+  paymentStatus: SalaryPaymentStatus;
+  notes?: string | null;
+  createdAt: string;
+}
+
+export interface SalaryListResponse {
+  data: Salary[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+export type CreateSalaryRequestPaymentStatus =
+  (typeof CreateSalaryRequestPaymentStatus)[keyof typeof CreateSalaryRequestPaymentStatus];
+
+export const CreateSalaryRequestPaymentStatus = {
+  EN_ATTENTE: "EN_ATTENTE",
+  PAYE: "PAYE",
+  ANNULE: "ANNULE",
+} as const;
+
+export interface CreateSalaryRequest {
+  userId: string;
+  month: number;
+  year: number;
+  baseSalary: number;
+  bonuses?: number;
+  deductions?: number;
+  paymentDate?: string;
+  paymentStatus?: CreateSalaryRequestPaymentStatus;
+  notes?: string;
+}
+
+export type UpdateSalaryRequestPaymentStatus =
+  (typeof UpdateSalaryRequestPaymentStatus)[keyof typeof UpdateSalaryRequestPaymentStatus];
+
+export const UpdateSalaryRequestPaymentStatus = {
+  EN_ATTENTE: "EN_ATTENTE",
+  PAYE: "PAYE",
+  ANNULE: "ANNULE",
+} as const;
+
+export interface UpdateSalaryRequest {
+  baseSalary?: number;
+  bonuses?: number;
+  deductions?: number;
+  paymentDate?: string;
+  paymentStatus?: UpdateSalaryRequestPaymentStatus;
+  notes?: string;
+}
+
+export interface FarmPerformanceItem {
+  farmId: string;
+  farmName: string;
+  activeBatches: number;
+  totalAnimals: number;
+  avgMortality: number;
+}
+
+export interface MonthlySalesItem {
+  month: string;
+  revenue: number;
+  transactions: number;
+}
+
+export interface MonthlyExpenseItem {
+  month: string;
+  amount: number;
+  category: string;
+}
+
+export interface ExpenseByCategoryItem {
+  category: string;
+  total: number;
+}
+
+export interface AnalyticsSummary {
+  totalRevenue: number;
+  totalExpenses: number;
+  netProfit: number;
+  roi: number;
+  totalTransactions: number;
+  totalMortality: number;
+  totalFeedConsumed: number;
+  totalEggsCollected: number;
+}
+
+export interface AnalyticsResponse {
+  summary: AnalyticsSummary;
+  farmPerformance: FarmPerformanceItem[];
+  monthlySales: MonthlySalesItem[];
+  monthlyExpenses: MonthlyExpenseItem[];
+  expensesByCategory: ExpenseByCategoryItem[];
+}
+
 export type ListUsersParams = {
   role?: UserRole;
   page?: number;
@@ -422,4 +596,22 @@ export type ListAuditLogsParams = {
   endDate?: string;
   page?: number;
   limit?: number;
+};
+
+export type ListCustomersParams = {
+  search?: string;
+  page?: number;
+  limit?: number;
+};
+
+export type ListSalariesParams = {
+  month?: number;
+  year?: number;
+  page?: number;
+  limit?: number;
+};
+
+export type GetAnalyticsParams = {
+  startDate?: string;
+  endDate?: string;
 };

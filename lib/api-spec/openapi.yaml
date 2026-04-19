@@ -33,6 +33,12 @@ tags:
     description: Dashboard analytics
   - name: audit
     description: Audit logs
+  - name: customers
+    description: Customer management
+  - name: hr
+    description: HR and salary management
+  - name: analytics
+    description: Analytics and BI
 paths:
   /healthz:
     get:
@@ -800,6 +806,207 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AuditLogListResponse"
+
+  /customers:
+    get:
+      operationId: listCustomers
+      tags: [customers]
+      summary: List customers
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+      responses:
+        "200":
+          description: List of customers
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomerListResponse"
+    post:
+      operationId: createCustomer
+      tags: [customers]
+      summary: Create a customer
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCustomerRequest"
+      responses:
+        "201":
+          description: Customer created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Customer"
+
+  /customers/{customerId}:
+    put:
+      operationId: updateCustomer
+      tags: [customers]
+      summary: Update a customer
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: customerId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateCustomerRequest"
+      responses:
+        "200":
+          description: Customer updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Customer"
+    delete:
+      operationId: deleteCustomer
+      tags: [customers]
+      summary: Delete a customer
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: customerId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Customer deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  /salaries:
+    get:
+      operationId: listSalaries
+      tags: [hr]
+      summary: List salary records
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: month
+          in: query
+          schema:
+            type: integer
+        - name: year
+          in: query
+          schema:
+            type: integer
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+      responses:
+        "200":
+          description: List of salaries
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SalaryListResponse"
+    post:
+      operationId: createSalary
+      tags: [hr]
+      summary: Create a salary record
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSalaryRequest"
+      responses:
+        "201":
+          description: Salary record created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Salary"
+
+  /salaries/{salaryId}:
+    put:
+      operationId: updateSalary
+      tags: [hr]
+      summary: Update a salary record
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: salaryId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateSalaryRequest"
+      responses:
+        "200":
+          description: Salary record updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Salary"
+
+  /analytics:
+    get:
+      operationId: getAnalytics
+      tags: [analytics]
+      summary: Get analytics data
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: Analytics data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnalyticsResponse"
 
 components:
   securitySchemes:
@@ -1758,3 +1965,336 @@ components:
         - total
         - page
         - limit
+
+    Customer:
+      type: object
+      properties:
+        id:
+          type: string
+        tenantId:
+          type: string
+        name:
+          type: string
+        phone:
+          type: string
+          nullable: true
+        email:
+          type: string
+          nullable: true
+        address:
+          type: string
+          nullable: true
+        type:
+          type: string
+          enum: [PARTICULIER, ENTREPRISE]
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - tenantId
+        - name
+        - type
+        - createdAt
+
+    CustomerListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Customer"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+      required:
+        - data
+        - total
+        - page
+        - limit
+
+    CreateCustomerRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+        address:
+          type: string
+        type:
+          type: string
+          enum: [PARTICULIER, ENTREPRISE]
+      required:
+        - name
+
+    UpdateCustomerRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+        address:
+          type: string
+        type:
+          type: string
+          enum: [PARTICULIER, ENTREPRISE]
+
+    Salary:
+      type: object
+      properties:
+        id:
+          type: string
+        tenantId:
+          type: string
+        userId:
+          type: string
+        userName:
+          type: string
+          nullable: true
+        userRole:
+          type: string
+          nullable: true
+        month:
+          type: integer
+        year:
+          type: integer
+        baseSalary:
+          type: number
+          format: float
+        bonuses:
+          type: number
+          format: float
+        deductions:
+          type: number
+          format: float
+        netSalary:
+          type: number
+          format: float
+        paymentDate:
+          type: string
+          nullable: true
+        paymentStatus:
+          type: string
+          enum: [EN_ATTENTE, PAYE, ANNULE]
+        notes:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - tenantId
+        - userId
+        - month
+        - year
+        - baseSalary
+        - bonuses
+        - deductions
+        - netSalary
+        - paymentStatus
+        - createdAt
+
+    SalaryListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Salary"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+      required:
+        - data
+        - total
+        - page
+        - limit
+
+    CreateSalaryRequest:
+      type: object
+      properties:
+        userId:
+          type: string
+        month:
+          type: integer
+        year:
+          type: integer
+        baseSalary:
+          type: number
+          format: float
+        bonuses:
+          type: number
+          format: float
+        deductions:
+          type: number
+          format: float
+        paymentDate:
+          type: string
+        paymentStatus:
+          type: string
+          enum: [EN_ATTENTE, PAYE, ANNULE]
+        notes:
+          type: string
+      required:
+        - userId
+        - month
+        - year
+        - baseSalary
+
+    UpdateSalaryRequest:
+      type: object
+      properties:
+        baseSalary:
+          type: number
+          format: float
+        bonuses:
+          type: number
+          format: float
+        deductions:
+          type: number
+          format: float
+        paymentDate:
+          type: string
+        paymentStatus:
+          type: string
+          enum: [EN_ATTENTE, PAYE, ANNULE]
+        notes:
+          type: string
+
+    FarmPerformanceItem:
+      type: object
+      properties:
+        farmId:
+          type: string
+        farmName:
+          type: string
+        activeBatches:
+          type: integer
+        totalAnimals:
+          type: integer
+        avgMortality:
+          type: number
+          format: float
+      required:
+        - farmId
+        - farmName
+        - activeBatches
+        - totalAnimals
+        - avgMortality
+
+    MonthlySalesItem:
+      type: object
+      properties:
+        month:
+          type: string
+        revenue:
+          type: number
+          format: float
+        transactions:
+          type: integer
+      required:
+        - month
+        - revenue
+        - transactions
+
+    MonthlyExpenseItem:
+      type: object
+      properties:
+        month:
+          type: string
+        amount:
+          type: number
+          format: float
+        category:
+          type: string
+      required:
+        - month
+        - amount
+        - category
+
+    ExpenseByCategoryItem:
+      type: object
+      properties:
+        category:
+          type: string
+        total:
+          type: number
+          format: float
+      required:
+        - category
+        - total
+
+    AnalyticsSummary:
+      type: object
+      properties:
+        totalRevenue:
+          type: number
+          format: float
+        totalExpenses:
+          type: number
+          format: float
+        netProfit:
+          type: number
+          format: float
+        roi:
+          type: number
+          format: float
+        totalTransactions:
+          type: integer
+        totalMortality:
+          type: integer
+        totalFeedConsumed:
+          type: number
+          format: float
+        totalEggsCollected:
+          type: integer
+      required:
+        - totalRevenue
+        - totalExpenses
+        - netProfit
+        - roi
+        - totalTransactions
+        - totalMortality
+        - totalFeedConsumed
+        - totalEggsCollected
+
+    AnalyticsResponse:
+      type: object
+      properties:
+        summary:
+          $ref: "#/components/schemas/AnalyticsSummary"
+        farmPerformance:
+          type: array
+          items:
+            $ref: "#/components/schemas/FarmPerformanceItem"
+        monthlySales:
+          type: array
+          items:
+            $ref: "#/components/schemas/MonthlySalesItem"
+        monthlyExpenses:
+          type: array
+          items:
+            $ref: "#/components/schemas/MonthlyExpenseItem"
+        expensesByCategory:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExpenseByCategoryItem"
+      required:
+        - summary
+        - farmPerformance
+        - monthlySales
+        - monthlyExpenses
+        - expensesByCategory

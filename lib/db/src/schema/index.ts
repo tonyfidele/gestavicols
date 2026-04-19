@@ -9,3 +9,5 @@ export * from "./stock";
 export * from "./expenses";
 export * from "./veterinary-records";
 export * from "./audit-logs";
+export * from "./customers";
+export * from "./salaries";
