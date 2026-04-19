@@ -1,0 +1,223 @@
+GESTAVICOLE SAAS
+Solution de gestion agricole multi-sites
+1. PRÉSENTATION GÉNÉRALE
+1.1 Nom du projet
+GESTAVICOLE
+1.2 Contexte
+Le projet vise à développer une plateforme SaaS de gestion agricole multi-sites destinée aux fermes avicoles et exploitations agricoles au Mali et en Afrique de l’Ouest.
+L’application permettra :
+•	Le suivi des bandes (poulets de chair, pondeuses)
+•	La gestion des stocks
+•	La gestion financière
+•	Le suivi vétérinaire
+•	L’analyse des performances
+•	La centralisation multi-fermes
+2. OBJECTIFS DU PROJET
+	Objectifs fonctionnels
+•	Digitaliser la gestion des fermes
+•	Réduire les pertes (mortalité, gaspillage)
+•	Améliorer la rentabilité
+•	Permettre le pilotage multi-site
+	Objectifs mesurables
+•	Taux de mortalité < 5%
+•	ROI par bande > 20%
+•	Réduction des pertes alimentaires de 10%
+•	Reporting automatisé en temps réel
+
+3. MODE SAAS – ARCHITECTURE MULTI-CLIENTS
+GESTAVICOLE sera une plateforme SaaS permettant :
+3.1 Multi-tenant
+•	Plusieurs entreprises agricoles
+•	Chaque entreprise possède :
+o	Plusieurs fermes
+o	Plusieurs bâtiments
+o	Plusieurs bandes
+Structure logique :
+Entreprise
+→ Fermes
+→ Bâtiments
+→ Bandes
+→ Suivi journalier
+3.2 Gestion des abonnements
+Plans possibles :
+Plan	Fonctionnalités
+Basic	1 ferme – fonctionnalités essentielles
+Pro	Multi-fermes – reporting avancé
+Premium	API – intégration mobile money 
+Paiement via :
+•	Orange Money
+•	Moov Money
+•	Sama Money
+•	Carte bancaire
+4. PROFILS UTILISATEURS
+4.1 Super Admin (Plateforme SaaS)
+•	Gestion des entreprises
+•	Gestion des abonnements
+•	Monitoring global
+•	Statistiques globales
+4.2 Administrateur Entreprise
+•	Accès complet à ses fermes
+•	Gestion utilisateurs
+•	Analyse financière
+4.3 Chef de ferme
+•	Gestion quotidienne
+•	Validation des données ouvriers
+4.4 Ouvrier
+•	Saisie quotidienne :
+o	mortalité
+o	alimentation
+o	production
+4.5 Vétérinaire
+•	Gestion vaccins
+•	Protocoles sanitaires
+•	Historique traitements
+4.6 Comptable
+•	Dépenses
+•	Bilans
+•	Analyse rentabilité
+5. PÉRIMÈTRE FONCTIONNEL
+MODULE 1 : DASHBOARD INTELLIGENT
+Vue globale :
+•	Récapitulatif ventes 
+•	Dépenses
+•	Stocks
+•	Nombre total de bandes actives
+•	Taux de mortalité
+•	Consommation moyenne d’aliments
+•	Production journalière d’œufs
+•	Trésorerie
+•	Alertes critiques
+KPI affichés :
+•	FCR (Feed Conversion Ratio)
+•	Coût de revient/kg
+•	Bénéfice par bande
+•	Performance par ferme
+MODULE 2 : GESTION DES BANDES
+-	Données d’une bande :
+•	Date d’entrée
+•	Nombre initial
+•	Type (chair / ponte)
+•	Provenance
+•	Coût d’achat
+-	Suivi journalier :
+•	Mortalité
+•	Alimentation consommée
+•	Poids moyen
+•	Température bâtiment
+•	Production œufs
+Calcul automatique :
+•	Taux de mortalité
+•	Performance alimentaire
+•	Coût cumulé
+•	Prévision bénéfice
+
+
+
+MODULE 3 : STOCKS & APPROVISIONNEMENT
+•	Aliments
+•	Médicaments
+•	Matériel
+•	Litière
+Fonctionnalités :
+•	Entrée stock
+•	Sortie stock
+•	Seuil d’alerte
+•	Inventaire automatique
+•	Historique par ferme
+MODULE 4 : MODULE VÉTÉRINAIRE
+•	Calendrier vaccinal
+•	Traitements par bande
+•	Historique sanitaire
+•	Alertes rappel vaccins
+•	Registre obligatoire
+MODULE 5 : VENTES & PRODUCTION
+Œufs :
+•	Ramassage journalier
+•	Œufs cassés
+•	Ventes
+•	Clients
+•	Facturation
+Poulets :
+•	Vente par lot
+•	Poids total
+•	Prix/kg
+•	Factures
+MODULE 6 : FINANCES & COMPTABILITÉ
+Dépenses :
+•	Aliment
+•	Personnel
+•	Vétérinaire
+•	Maintenance
+•	Transport
+Automatisations :
+•	Coût de revient par bande
+•	Marge brute
+•	Bilan par ferme
+•	Bilan consolidé entreprise
+MODULE 7 : GESTION MULTI-SITES
+Fonctionnalités spécifiques SaaS :
+•	Comparaison entre fermes
+•	Classement performance
+•	Benchmark interne
+•	Consolidation financière globale
+MODULE 8 : ANALYTICS & BUSINESS INTELLIGENCE
+Graphiques :
+•	Evolution mortalité
+•	Evolution production
+•	Analyse ROI
+•	Projection rentabilité
+Exports :
+•	PDF
+•	Excel 
+
+MODULE 9 : GESTION RH
+•	Ouvriers
+•	Salaires
+•	Primes performance
+•	Suivi présence
+MODULE 10 : ALERTES & NOTIFICATIONS
+•	Stock faible
+•	Mortalité anormale
+•	Vaccin à faire
+•	Dépassement budget
+•	Rappel paiement abonnement
+Notifications :
+•	SMS
+•	Email
+•	Push mobile
+
+6. SPÉCIFICATIONS TECHNIQUES
+6.1 Architecture recommandée
+Frontend :
+•	Next.js
+•	React
+•	Tailwind
+Backend :
+•	Node.js
+•	API REST ou GraphQL
+•	Prisma ORM
+Base de données :
+•	PostgreSQL
+Mobile :
+•	PWA ou React Native
+6.2 Architecture SaaS
+•	Base de données multi-tenant (tenant_id)
+•	Séparation logique par entreprise
+•	Sécurité par rôle
+•	Système d’abonnement intégré
+6.3 Sécurité
+•	Authentification via Clerk ou JWT
+•	RBAC (Role Based Access Control)
+•	Chiffrement HTTPS
+•	Backup automatique
+•	Journal d’audit (qui a modifié quoi)
+6.4 Performance & Scalabilité
+•	Hébergement VPS
+•	CDN
+•	Cache Redis
+•	File d’attente (BullMQ)
+7. CONFORMITÉ & LÉGAL
+•	Archivage des données
+•	Export légal des registres
+•	Conformité aux normes sanitaires agricoles
+

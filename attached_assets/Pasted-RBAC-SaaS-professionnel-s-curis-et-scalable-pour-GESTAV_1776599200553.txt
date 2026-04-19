@@ -1,0 +1,234 @@
+RBAC SaaS professionnel, sécurisé et scalable pour GESTAVICOLE.
+Objectif :
+•	✅ Isolation stricte par tenantId
+•	✅ Permissions granulaires
+•	✅ Protection backend totale (pas seulement frontend)
+•	✅ Compatible Next.js + Prisma + JWT/Clerk
+•	✅ Audit des actions sensibles
+1️ STRATÉGIE RBAC POUR GESTAVICOLE SAAS
+Architecture sécurité en 4 couches :
+1.	Authentification (qui es-tu ?)
+2.	Isolation tenant (à quelle entreprise appartiens-tu ?)
+3.	Rôle (quel est ton rôle ?)
+4.	Permission fine (que peux-tu faire ?)
+
+ 2 MODÈLE RBAC COMPLET
+Nous allons utiliser :
+•	Roles (déjà existants)
+•	Permissions (granulaires)
+•	RolePermission (mapping)
+•	UserPermission (override optionnel)
+
+AJOUT AU schema.prisma
+Ajoute ceci dans ton schema :
+
+
+
+
+
+
+
+ENUM PERMISSIONS
+enum PermissionAction {
+  CREATE
+  READ
+  UPDATE
+  DELETE
+  APPROVE
+  EXPORT
+}
+
+TABLE PERMISSION
+model Permission {
+  id        String   @id @default(uuid())
+  resource  String   // ex: "BATCH", "SALE", "STOCK"
+  action    PermissionAction
+  createdAt DateTime @default(now())
+
+  rolePermissions RolePermission[]
+}
+
+TABLE ROLE PERMISSION
+model RolePermission {
+  id           String   @id @default(uuid())
+  role         UserRole
+  permissionId String
+
+  permission   Permission @relation(fields: [permissionId], references: [id])
+
+  @@unique([role, permissionId])
+}
+
+OPTIONNEL : PERMISSION PERSONNALISÉE PAR UTILISATEUR
+model UserPermission {
+  id           String   @id @default(uuid())
+  userId       String
+  permissionId String
+
+  user         User @relation(fields: [userId], references: [id])
+  permission   Permission @relation(fields: [permissionId], references: [id])
+
+  @@unique([userId, permissionId])
+}
+
+3️ MATRICE DE PERMISSIONS RECOMMANDÉE
+SUPER_ADMIN (Plateforme SaaS)
+•	Tout sur tous les tenants
+
+ADMIN (Entreprise)
+•	CRUD Farms
+•	CRUD Buildings
+•	CRUD Batches
+•	CRUD Sales
+•	CRUD Stock
+•	CRUD Expenses
+•	READ Analytics
+•	EXPORT Reports
+
+CHEF_FERME
+•	READ Farms
+•	CREATE DailyRecord
+•	UPDATE DailyRecord
+•	READ Stock
+•	READ Batch
+•	READ Sales
+
+OUVRIER
+•	CREATE DailyRecord
+•	READ Batch
+•	READ Own Farm
+
+VETERINAIRE
+•	CREATE VeterinaryRecord
+•	READ Batch
+•	UPDATE VeterinaryRecord
+
+COMPTABLE
+•	CREATE Expense
+•	READ Expense
+•	CREATE Sale
+•	READ Sale
+•	EXPORT Financial Reports
+
+4️ MIDDLEWARE BACKEND SÉCURISÉ (CRITIQUE)
+Dans Next.js API :
+Étape 1 : Middleware Auth
+export async function getUserFromToken(req) {
+  const token = req.headers.authorization?.split(" ")[1]
+  if (!token) throw new Error("Unauthorized")
+
+  const decoded = verifyToken(token)
+
+  return {
+    userId: decoded.userId,
+    tenantId: decoded.tenantId,
+    role: decoded.role
+  }
+}
+
+Étape 2 : Vérification permission
+export async function checkPermission(user, resource, action) {
+  if (user.role === "SUPER_ADMIN") return true
+
+  const permission = await prisma.rolePermission.findFirst({
+    where: {
+      role: user.role,
+      permission: {
+        resource,
+        action
+      }
+    }
+  })
+
+  if (!permission) {
+    throw new Error("Forbidden")
+  }
+
+  return true
+}
+
+Étape 3 : Sécurisation tenant obligatoire
+TOUJOURS filtrer par tenantId :
+await prisma.batch.findMany({
+  where: {
+    tenantId: user.tenantId
+  }
+})
+❌ JAMAIS :
+await prisma.batch.findMany()
+
+5️ ISOLATION MULTI-TENANT RENFORCÉE
+Option avancée (niveau bancaire) :
+Créer une fonction utilitaire :
+function withTenant(user, where = {}) {
+  return {
+    ...where,
+    tenantId: user.tenantId
+  }
+}
+Utilisation :
+await prisma.sale.findMany({
+  where: withTenant(user)
+})
+
+6️ JOURNAL D’AUDIT AUTOMATIQUE
+Chaque action sensible :
+await prisma.auditLog.create({
+  data: {
+    tenantId: user.tenantId,
+    userId: user.userId,
+    action: "CREATE_SALE",
+    entity: "SALE",
+    entityId: sale.id
+  }
+})
+ 7️ PROTECTION AVANCÉE
+1️ Protection contre escalade de privilège
+Ne jamais faire confiance au role envoyé par frontend.
+Toujours lire depuis DB ou token signé.
+
+2️ Protection modification tenant
+Ne jamais accepter tenantId venant du frontend.
+Toujours :
+tenantId: user.tenantId
+
+3️ Soft delete sécurisé
+Ajouter :
+deletedAt DateTime?
+Et filtrer :
+where: {
+  deletedAt: null
+}
+
+8️ PERMISSIONS GRANULAIRES PAR FERME (OPTION AVANCÉE)
+Si tu veux ultra-pro :
+Ajouter table :
+model FarmAccess {
+  id        String @id @default(uuid())
+  userId    String
+  farmId    String
+
+  user      User @relation(fields: [userId], references: [id])
+  farm      Farm @relation(fields: [farmId], references: [id])
+
+  @@unique([userId, farmId])
+}
+Ainsi un chef de ferme peut être limité à UNE seule ferme.
+
+9️ VERSION ENTERPRISE (NIVEAU ÉLEVÉ)
+•	2FA
+•	Journal des connexions
+•	Limitation IP
+•	Expiration session
+•	Signature JWT courte durée + refresh token
+10 ARCHITECTURE SÉCURITÉ FINALE
+Client → Next.js → Middleware Auth → Middleware Permission → Service → Prisma (avec tenantId obligatoire)
+
+Résultat 
+✔ Multi-tenant sécurisé
+✔ Rôles granulaires
+✔ Isolation stricte
+✔ Audit complet
+✔ Prêt pour SaaS payant
+✔ Niveau production
+
