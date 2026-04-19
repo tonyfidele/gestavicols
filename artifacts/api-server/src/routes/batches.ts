@@ -410,4 +410,40 @@ router.post(
   }
 );
 
+router.delete(
+  "/batches/:batchId/veterinary-records/:recordId",
+  requireAuth,
+  requirePermission("VET_RECORD", "DELETE"),
+  async (req, res): Promise<void> => {
+    const user = req.user!;
+    const { batchId, recordId } = req.params;
+
+    const batchConds = [eq(batchesTable.id, batchId), isNull(batchesTable.deletedAt)];
+    if (user.role !== "SUPER_ADMIN") batchConds.push(eq(batchesTable.tenantId, user.tenantId));
+    const [batch] = await db.select().from(batchesTable).where(and(...batchConds));
+    if (!batch) {
+      res.status(404).json({ message: "Batch not found" });
+      return;
+    }
+
+    const [deleted] = await db
+      .delete(veterinaryRecordsTable)
+      .where(
+        and(
+          eq(veterinaryRecordsTable.id, recordId),
+          eq(veterinaryRecordsTable.batchId, batchId)
+        )
+      )
+      .returning();
+
+    if (!deleted) {
+      res.status(404).json({ message: "Record not found" });
+      return;
+    }
+
+    await logAudit(user, "DELETE_VET_RECORD", "VET_RECORD", recordId);
+    res.json({ id: recordId });
+  }
+);
+
 export default router;

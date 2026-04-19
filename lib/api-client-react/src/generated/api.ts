@@ -2790,6 +2790,78 @@ export const useCreateVeterinaryRecord = <
   return useMutation(getCreateVeterinaryRecordMutationOptions(options));
 };
 
+export const getDeleteVeterinaryRecordUrl = (batchId: string, recordId: string) => {
+  return `/api/batches/${batchId}/veterinary-records/${recordId}`;
+};
+
+export const deleteVeterinaryRecord = async (
+  batchId: string,
+  recordId: string,
+  options?: RequestInit,
+): Promise<DeleteResponse> => {
+  return customFetch<DeleteResponse>(getDeleteVeterinaryRecordUrl(batchId, recordId), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteVeterinaryRecordMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteVeterinaryRecord>>,
+    TError,
+    { batchId: string; recordId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteVeterinaryRecord>>,
+  TError,
+  { batchId: string; recordId: string },
+  TContext
+> => {
+  const mutationKey = ["deleteVeterinaryRecord"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteVeterinaryRecord>>,
+    { batchId: string; recordId: string }
+  > = (props) => {
+    const { batchId, recordId } = props ?? {};
+    return deleteVeterinaryRecord(batchId, recordId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export const useDeleteVeterinaryRecord = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteVeterinaryRecord>>,
+    TError,
+    { batchId: string; recordId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteVeterinaryRecord>>,
+  TError,
+  { batchId: string; recordId: string },
+  TContext
+> => {
+  return useMutation(getDeleteVeterinaryRecordMutationOptions(options));
+};
+
 /**
  * @summary Get dashboard statistics
  */

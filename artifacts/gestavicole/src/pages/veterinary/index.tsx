@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { AppLayout } from "@/components/layout/app-layout";
-import { useListBatches, useListVeterinaryRecords, useCreateVeterinaryRecord } from "@workspace/api-client-react";
-import { Stethoscope, Plus, Loader2, Calendar, Syringe, Pill, AlertCircle, ChevronDown } from "lucide-react";
+import { useListBatches, useListVeterinaryRecords, useCreateVeterinaryRecord, useDeleteVeterinaryRecord } from "@workspace/api-client-react";
+import { Stethoscope, Plus, Loader2, Calendar, Syringe, Pill, AlertCircle, ChevronDown, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -120,7 +120,19 @@ function CreateVetRecordModal({ batchId, onClose, onSuccess }: { batchId: string
 function BatchVetRecords({ batchId, batchName }: { batchId: string; batchName: string }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const { data, refetch } = useListVeterinaryRecords(batchId, { query: { enabled: isOpen } });
+  const { mutate: deleteRecord, isPending: isDeleting } = useDeleteVeterinaryRecord();
+
+  const handleDelete = (recordId: string) => {
+    deleteRecord(
+      { batchId, recordId },
+      {
+        onSuccess: () => { toast.success("Enregistrement supprimé"); setDeletingId(null); refetch(); },
+        onError: () => { toast.error("Erreur lors de la suppression"); setDeletingId(null); },
+      }
+    );
+  };
 
   const typeIcon = (type: string) => {
     if (type === "VACCIN") return <Syringe className="w-4 h-4 text-blue-500" />;
@@ -171,31 +183,50 @@ function BatchVetRecords({ batchId, batchName }: { batchId: string; batchName: s
             <div className="divide-y divide-slate-100">
               {data?.data.map((record) => (
                 <div key={record.id} className="px-6 py-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-start gap-3">
-                      <div className="mt-0.5">{typeIcon(record.type)}</div>
-                      <div>
-                        <div className="flex items-center gap-2 mb-1">
-                          {typeBadge(record.type)}
-                          <span className="text-xs text-slate-400">
-                            {format(new Date(record.date), "dd MMM yyyy", { locale: fr })}
-                          </span>
-                        </div>
-                        <p className="text-sm font-medium text-slate-900">{record.description}</p>
-                        {record.medication && <p className="text-xs text-slate-500 mt-0.5">Médicament: {record.medication} {record.dosage && `· Dose: ${record.dosage}`}</p>}
-                        {record.treatment && <p className="text-xs text-slate-500">Traitement: {record.treatment}</p>}
-                        <p className="text-xs text-slate-400 mt-1">Dr. {record.veterinarianName}</p>
+                  {deletingId === record.id ? (
+                    <div className="flex items-center justify-between bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+                      <p className="text-sm font-medium text-red-700">Confirmer la suppression ?</p>
+                      <div className="flex gap-2">
+                        <button onClick={() => setDeletingId(null)} className="text-xs px-3 py-1.5 border border-slate-200 rounded-lg bg-white text-slate-700 hover:bg-slate-50">Annuler</button>
+                        <button onClick={() => handleDelete(record.id)} disabled={isDeleting} className="text-xs px-3 py-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50">
+                          {isDeleting ? "..." : "Supprimer"}
+                        </button>
                       </div>
                     </div>
-                    {record.nextVisit && (
-                      <div className="text-right">
-                        <div className="flex items-center gap-1 text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded-lg">
-                          <Calendar className="w-3 h-3" />
-                          Prochain: {format(new Date(record.nextVisit), "dd/MM/yyyy")}
+                  ) : (
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-start gap-3">
+                        <div className="mt-0.5">{typeIcon(record.type)}</div>
+                        <div>
+                          <div className="flex items-center gap-2 mb-1">
+                            {typeBadge(record.type)}
+                            <span className="text-xs text-slate-400">
+                              {format(new Date(record.date), "dd MMM yyyy", { locale: fr })}
+                            </span>
+                          </div>
+                          <p className="text-sm font-medium text-slate-900">{record.description}</p>
+                          {record.medication && <p className="text-xs text-slate-500 mt-0.5">Médicament: {record.medication} {record.dosage && `· Dose: ${record.dosage}`}</p>}
+                          {record.treatment && <p className="text-xs text-slate-500">Traitement: {record.treatment}</p>}
+                          <p className="text-xs text-slate-400 mt-1">Dr. {record.veterinarianName}</p>
                         </div>
                       </div>
-                    )}
-                  </div>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        {record.nextVisit && (
+                          <div className="flex items-center gap-1 text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded-lg">
+                            <Calendar className="w-3 h-3" />
+                            Prochain: {format(new Date(record.nextVisit), "dd/MM/yyyy")}
+                          </div>
+                        )}
+                        <button
+                          onClick={() => setDeletingId(record.id)}
+                          className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                          title="Supprimer"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

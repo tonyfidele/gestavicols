@@ -6,9 +6,10 @@ import {
   useCreateDailyRecord,
   useListVeterinaryRecords,
   useCreateVeterinaryRecord,
+  useDeleteVeterinaryRecord,
   useUpdateBatch,
 } from "@workspace/api-client-react";
-import { Loader2, ArrowLeft, Layers, Activity, Egg, Droplets, Thermometer, Plus, Syringe, Pill, Calendar, SkullIcon, XCircle, CheckCircle2, Pencil } from "lucide-react";
+import { Loader2, ArrowLeft, Layers, Activity, Egg, Droplets, Thermometer, Plus, Syringe, Pill, Calendar, SkullIcon, XCircle, CheckCircle2, Pencil, Trash2 } from "lucide-react";
 import { Link, useParams, useLocation } from "wouter";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -361,6 +362,7 @@ export default function BatchDetail() {
   const [isMortalityModalOpen, setIsMortalityModalOpen] = useState(false);
   const [isTerminateModalOpen, setIsTerminateModalOpen] = useState(false);
   const [isVetModalOpen, setIsVetModalOpen] = useState(false);
+  const [deletingVetId, setDeletingVetId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"daily" | "vet">("daily");
 
   const {
@@ -372,6 +374,17 @@ export default function BatchDetail() {
 
   const { data: dailyRecords, refetch: refetchDaily, isLoading: dailyLoading } = useListDailyRecords(id ?? "", { limit: 30 }, { query: { enabled: !!id } });
   const { data: vetRecords, refetch: refetchVet, isLoading: vetLoading } = useListVeterinaryRecords(id ?? "", { query: { enabled: !!id } });
+  const { mutate: deleteVetRecord, isPending: isDeletingVet } = useDeleteVeterinaryRecord();
+
+  const handleDeleteVetRecord = (recordId: string) => {
+    deleteVetRecord(
+      { batchId: id ?? "", recordId },
+      {
+        onSuccess: () => { toast.success("Enregistrement vétérinaire supprimé"); setDeletingVetId(null); refetchVet(); refetchBatch(); },
+        onError: () => { toast.error("Erreur lors de la suppression"); setDeletingVetId(null); },
+      }
+    );
+  };
 
   const batch = batchData;
 
@@ -614,25 +627,46 @@ export default function BatchDetail() {
           ) : (
             vetRecords?.data.map((record) => (
               <div key={record.id} className="bg-white rounded-2xl border border-slate-200 p-5">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-start gap-3">
-                    {record.type === "VACCIN" ? <Syringe className="w-5 h-5 text-blue-500 mt-0.5" /> : <Pill className="w-5 h-5 text-orange-500 mt-0.5" />}
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${record.type === "VACCIN" ? "bg-blue-100 text-blue-700" : "bg-orange-100 text-orange-700"}`}>{record.type}</span>
-                        <span className="text-xs text-slate-400">{format(new Date(record.date), "dd MMM yyyy", { locale: fr })}</span>
-                      </div>
-                      <p className="font-semibold text-slate-900">{record.description}</p>
-                      {record.medication && <p className="text-sm text-slate-500 mt-0.5">{record.medication} {record.dosage && `— ${record.dosage}`}</p>}
-                      <p className="text-sm text-slate-400 mt-1">Dr. {record.veterinarianName}</p>
+                {deletingVetId === record.id ? (
+                  <div className="flex items-center justify-between bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+                    <p className="text-sm font-medium text-red-700">Confirmer la suppression ?</p>
+                    <div className="flex gap-2">
+                      <button onClick={() => setDeletingVetId(null)} className="text-xs px-3 py-1.5 border border-slate-200 rounded-lg bg-white text-slate-700 hover:bg-slate-50">Annuler</button>
+                      <button onClick={() => handleDeleteVetRecord(record.id)} disabled={isDeletingVet} className="text-xs px-3 py-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50">
+                        {isDeletingVet ? "..." : "Supprimer"}
+                      </button>
                     </div>
                   </div>
-                  {record.nextVisit && (
-                    <div className="flex items-center gap-1 text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded-lg">
-                      <Calendar className="w-3 h-3" /> Rappel: {format(new Date(record.nextVisit), "dd/MM/yyyy")}
+                ) : (
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-start gap-3">
+                      {record.type === "VACCIN" ? <Syringe className="w-5 h-5 text-blue-500 mt-0.5" /> : <Pill className="w-5 h-5 text-orange-500 mt-0.5" />}
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${record.type === "VACCIN" ? "bg-blue-100 text-blue-700" : "bg-orange-100 text-orange-700"}`}>{record.type}</span>
+                          <span className="text-xs text-slate-400">{format(new Date(record.date), "dd MMM yyyy", { locale: fr })}</span>
+                        </div>
+                        <p className="font-semibold text-slate-900">{record.description}</p>
+                        {record.medication && <p className="text-sm text-slate-500 mt-0.5">{record.medication} {record.dosage && `— ${record.dosage}`}</p>}
+                        <p className="text-sm text-slate-400 mt-1">Dr. {record.veterinarianName}</p>
+                      </div>
                     </div>
-                  )}
-                </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      {record.nextVisit && (
+                        <div className="flex items-center gap-1 text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded-lg">
+                          <Calendar className="w-3 h-3" /> Rappel: {format(new Date(record.nextVisit), "dd/MM/yyyy")}
+                        </div>
+                      )}
+                      <button
+                        onClick={() => setDeletingVetId(record.id)}
+                        className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Supprimer"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             ))
           )}
