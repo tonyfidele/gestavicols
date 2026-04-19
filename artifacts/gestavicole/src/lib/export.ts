@@ -38,6 +38,19 @@ export function exportToExcel(
   XLSX.writeFile(wb, `${filename}_${format(new Date(), "yyyy-MM-dd")}.xlsx`);
 }
 
+// Strip non-breaking spaces (U+00A0, U+202F) that jsPDF cannot render
+// with its default Helvetica font, replacing them with regular spaces.
+function pdfSafe(text: string): string {
+  return text.replace(/[\u00A0\u202F]/g, " ");
+}
+
+// Format a number with plain spaces as thousands separator (safe for jsPDF)
+function fmtNum(n: number): string {
+  return Math.round(Number(n))
+    .toString()
+    .replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+}
+
 export function exportToPDF(
   filename: string,
   title: string,
@@ -53,13 +66,13 @@ export function exportToPDF(
 
   doc.setFontSize(14);
   doc.setTextColor(16, 185, 129);
-  doc.text(title, 14, 27);
+  doc.text(pdfSafe(title), 14, 27);
 
   doc.setFontSize(9);
   doc.setTextColor(100, 116, 139);
-  doc.text(subtitle, 14, 34);
+  doc.text(pdfSafe(subtitle), 14, 34);
   doc.text(
-    `Généré le ${format(new Date(), "dd MMMM yyyy 'à' HH:mm", { locale: fr })}`,
+    `Genere le ${format(new Date(), "dd/MM/yyyy HH:mm")}`,
     doc.internal.pageSize.width - 14,
     34,
     { align: "right" }
@@ -69,7 +82,12 @@ export function exportToPDF(
     startY: 40,
     head: [columns.map((c) => c.header)],
     body: data.map((row) =>
-      columns.map((c) => String(row[c.key] ?? ""))
+      columns.map((c) => {
+        const val = row[c.key];
+        if (val === null || val === undefined) return "";
+        if (typeof val === "number") return fmtNum(val);
+        return pdfSafe(String(val));
+      })
     ),
     styles: {
       fontSize: 9,

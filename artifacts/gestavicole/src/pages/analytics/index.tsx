@@ -84,10 +84,20 @@ export default function Analytics() {
 
   const handleExportPdf = () => {
     if (!data) return;
+
+    // Safe number formatter — avoids non-breaking spaces from fr-ML locale
+    // which jsPDF cannot render with the default Helvetica font.
+    const fmtNum = (n: number) =>
+      Math.round(n)
+        .toString()
+        .replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+    const fmtFcfa = (n: number) => `${fmtNum(n)} FCFA`;
+    const fmtPct = (n: number) => `${Number(n).toFixed(1)}%`;
+
     const doc = new jsPDF({ orientation: "portrait" });
     const pageW = doc.internal.pageSize.width;
-    const dateRange = `${format(new Date(startDate), "dd/MM/yyyy")} — ${format(new Date(endDate), "dd/MM/yyyy")}`;
-    const generatedAt = format(new Date(), "dd MMMM yyyy 'à' HH:mm", { locale: fr });
+    const dateRange = `${format(new Date(startDate), "dd/MM/yyyy")} - ${format(new Date(endDate), "dd/MM/yyyy")}`;
+    const generatedAt = format(new Date(), "dd/MM/yyyy HH:mm");
 
     doc.setFillColor(16, 185, 129);
     doc.rect(0, 0, pageW, 40, "F");
@@ -97,25 +107,25 @@ export default function Analytics() {
     doc.setFontSize(13);
     doc.text("Rapport Analytics", 14, 28);
     doc.setFontSize(9);
-    doc.text(`Période : ${dateRange}`, 14, 36);
-    doc.text(`Généré le ${generatedAt}`, pageW - 14, 36, { align: "right" });
+    doc.text(`Periode : ${dateRange}`, 14, 36);
+    doc.text(`Genere le ${generatedAt}`, pageW - 14, 36, { align: "right" });
 
     doc.setTextColor(15, 23, 42);
     doc.setFontSize(13);
-    doc.text("Indicateurs Clés de Performance", 14, 52);
+    doc.text("Indicateurs Cles de Performance", 14, 52);
 
     autoTable(doc, {
       startY: 56,
       head: [["Indicateur", "Valeur"]],
       body: [
-        ["Revenus Totaux", `${data.summary.totalRevenue.toLocaleString("fr-ML")} FCFA`],
-        ["Dépenses Totales", `${data.summary.totalExpenses.toLocaleString("fr-ML")} FCFA`],
-        ["Bénéfice Net", `${data.summary.netProfit.toLocaleString("fr-ML")} FCFA`],
-        ["ROI", `${data.summary.roi}%`],
-        ["Transactions", `${data.summary.totalTransactions}`],
-        ["Mortalité totale", `${data.summary.totalMortality.toLocaleString("fr-ML")} animaux`],
-        ["Aliment consommé", `${(data.summary.totalFeedConsumed ?? 0).toLocaleString("fr-ML")} kg`],
-        ["Œufs collectés", `${(data.summary.totalEggsCollected ?? 0).toLocaleString("fr-ML")}`],
+        ["Revenus Totaux", fmtFcfa(data.summary.totalRevenue)],
+        ["Depenses Totales", fmtFcfa(data.summary.totalExpenses)],
+        ["Benefice Net", fmtFcfa(data.summary.netProfit)],
+        ["ROI", fmtPct(data.summary.roi)],
+        ["Transactions", String(data.summary.totalTransactions)],
+        ["Mortalite totale", `${fmtNum(data.summary.totalMortality)} animaux`],
+        ["Aliment consomme", `${fmtNum(data.summary.totalFeedConsumed ?? 0)} kg`],
+        ["Oeufs collectes", fmtNum(data.summary.totalEggsCollected ?? 0)],
       ],
       styles: { fontSize: 10, cellPadding: 4 },
       headStyles: { fillColor: [16, 185, 129], textColor: 255, fontStyle: "bold" },
@@ -128,15 +138,15 @@ export default function Analytics() {
 
     if (mergedMonthlyData.length > 0) {
       doc.setFontSize(13);
-      doc.text("Évolution Mensuelle", 14, afterKpi);
+      doc.text("Evolution Mensuelle", 14, afterKpi);
       autoTable(doc, {
         startY: afterKpi + 4,
-        head: [["Mois", "Revenus (FCFA)", "Dépenses (FCFA)", "Bénéfice (FCFA)"]],
+        head: [["Mois", "Revenus (FCFA)", "Depenses (FCFA)", "Benefice (FCFA)"]],
         body: mergedMonthlyData.map(m => [
           m.month,
-          m.revenus.toLocaleString("fr-ML"),
-          m.depenses.toLocaleString("fr-ML"),
-          m.benefice.toLocaleString("fr-ML"),
+          fmtNum(m.revenus),
+          fmtNum(m.depenses),
+          fmtNum(m.benefice),
         ]),
         styles: { fontSize: 9, cellPadding: 3 },
         headStyles: { fillColor: [59, 130, 246], textColor: 255, fontStyle: "bold" },
@@ -152,14 +162,16 @@ export default function Analytics() {
       if (afterMonthly > 220) doc.addPage();
       const startY = afterMonthly > 220 ? 20 : afterMonthly;
       doc.setFontSize(13);
-      doc.text("Répartition des Dépenses par Catégorie", 14, startY);
+      doc.text("Repartition des Depenses par Categorie", 14, startY);
       autoTable(doc, {
         startY: startY + 4,
-        head: [["Catégorie", "Montant (FCFA)", "Part (%)"]],
+        head: [["Categorie", "Montant (FCFA)", "Part (%)"]],
         body: expensePieData.map(e => [
           e.name,
-          e.value.toLocaleString("fr-ML"),
-          `${((e.value / data.summary.totalExpenses) * 100).toFixed(1)}%`,
+          fmtNum(e.value),
+          data.summary.totalExpenses > 0
+            ? fmtPct((e.value / data.summary.totalExpenses) * 100)
+            : "0.0%",
         ]),
         styles: { fontSize: 9, cellPadding: 3 },
         headStyles: { fillColor: [245, 158, 11], textColor: 255, fontStyle: "bold" },
@@ -177,12 +189,12 @@ export default function Analytics() {
       doc.text("Performance par Ferme", 14, startY2);
       autoTable(doc, {
         startY: startY2 + 4,
-        head: [["Ferme", "Lots actifs", "Animaux", "Mortalité moy."]],
+        head: [["Ferme", "Lots actifs", "Animaux", "Mortalite moy."]],
         body: data.farmPerformance.map(f => [
           f.farmName,
-          f.activeBatches,
-          f.totalAnimals.toLocaleString("fr-ML"),
-          `${f.avgMortality.toFixed(1)}%`,
+          String(f.activeBatches),
+          fmtNum(f.totalAnimals),
+          fmtPct(f.avgMortality),
         ]),
         styles: { fontSize: 9, cellPadding: 3 },
         headStyles: { fillColor: [139, 92, 246], textColor: 255, fontStyle: "bold" },
