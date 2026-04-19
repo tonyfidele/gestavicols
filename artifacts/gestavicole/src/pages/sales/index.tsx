@@ -6,6 +6,8 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { formatCurrency } from "@/lib/utils";
 import { toast } from "sonner";
+import { ExportMenu } from "@/components/ui/export-menu";
+import { exportToExcel, exportToPDF } from "@/lib/export";
 
 type Sale = {
   id: string;
@@ -45,6 +47,30 @@ export default function Sales() {
     }
   };
 
+  const COLS = [
+    { header: "Date", key: "date", width: 15 },
+    { header: "Acheteur", key: "buyerName", width: 25 },
+    { header: "Lot", key: "batchName", width: 20 },
+    { header: "Type", key: "type", width: 12 },
+    { header: "Quantité", key: "quantity", width: 12 },
+    { header: "Prix Unitaire (FCFA)", key: "unitPrice", width: 20 },
+    { header: "Total (FCFA)", key: "totalAmount", width: 18 },
+  ];
+
+  const getExportRows = () =>
+    (salesData?.data ?? []).map((s) => ({
+      date: format(new Date(s.saleDate), "dd/MM/yyyy"),
+      buyerName: s.buyerName,
+      batchName: s.batchName ?? "—",
+      type: s.type,
+      quantity: s.quantity,
+      unitPrice: s.unitPrice,
+      totalAmount: s.totalAmount,
+    }));
+
+  const handleExcel = () => exportToExcel("rapport_ventes", "Ventes", COLS, getExportRows());
+  const handlePdf = () => exportToPDF("rapport_ventes", "Rapport des Ventes", `Total : ${formatCurrency(salesData?.totalAmount || 0)} — ${salesData?.total || 0} transactions`, COLS, getExportRows());
+
   return (
     <AppLayout>
       <div className="flex justify-between items-center mb-8">
@@ -52,12 +78,15 @@ export default function Sales() {
           <h1 className="text-3xl font-display font-bold text-slate-900">Ventes</h1>
           <p className="text-slate-500 mt-1">Registre des ventes et transactions</p>
         </div>
-        <button
-          onClick={() => { setEditSale(null); setIsModalOpen(true); }}
-          className="flex items-center gap-2 bg-primary hover:bg-emerald-600 text-white px-4 py-2.5 rounded-xl font-medium shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5"
-        >
-          <Plus className="w-5 h-5" /> Enregistrer Vente
-        </button>
+        <div className="flex items-center gap-3">
+          <ExportMenu onExcel={handleExcel} onPdf={handlePdf} disabled={isLoading || !salesData?.data?.length} />
+          <button
+            onClick={() => { setEditSale(null); setIsModalOpen(true); }}
+            className="flex items-center gap-2 bg-primary hover:bg-emerald-600 text-white px-4 py-2.5 rounded-xl font-medium shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5"
+          >
+            <Plus className="w-5 h-5" /> Enregistrer Vente
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">

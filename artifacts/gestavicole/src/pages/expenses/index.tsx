@@ -6,6 +6,8 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { formatCurrency } from "@/lib/utils";
 import { toast } from "sonner";
+import { ExportMenu } from "@/components/ui/export-menu";
+import { exportToExcel, exportToPDF } from "@/lib/export";
 
 const CATEGORIES = ["ALIMENTS", "MEDICAMENTS", "ENERGIE", "MAIN_OEUVRE", "EQUIPEMENT", "TRANSPORT", "AUTRE"];
 
@@ -57,6 +59,24 @@ export default function Expenses() {
     }
   };
 
+  const COLS = [
+    { header: "Date", key: "date", width: 15 },
+    { header: "Description", key: "description", width: 35 },
+    { header: "Catégorie", key: "category", width: 18 },
+    { header: "Montant (FCFA)", key: "amount", width: 20 },
+  ];
+
+  const getExportRows = () =>
+    (expensesData?.data ?? []).map((e) => ({
+      date: format(new Date(e.date), "dd/MM/yyyy"),
+      description: e.description,
+      category: e.category,
+      amount: e.amount,
+    }));
+
+  const handleExcel = () => exportToExcel("rapport_depenses", "Dépenses", COLS, getExportRows());
+  const handlePdf = () => exportToPDF("rapport_depenses", "Rapport des Dépenses", `Total : ${formatCurrency(expensesData?.totalAmount || 0)} — ${expensesData?.total || 0} dépenses`, COLS, getExportRows());
+
   return (
     <AppLayout>
       <div className="flex justify-between items-center mb-8">
@@ -64,12 +84,15 @@ export default function Expenses() {
           <h1 className="text-3xl font-display font-bold text-slate-900">Dépenses</h1>
           <p className="text-slate-500 mt-1">Suivi des charges et dépenses d'exploitation</p>
         </div>
-        <button
-          onClick={() => { setEditExpense(null); setIsModalOpen(true); }}
-          className="flex items-center gap-2 bg-primary hover:bg-emerald-600 text-white px-4 py-2.5 rounded-xl font-medium shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5"
-        >
-          <Plus className="w-5 h-5" /> Enregistrer dépense
-        </button>
+        <div className="flex items-center gap-3">
+          <ExportMenu onExcel={handleExcel} onPdf={handlePdf} disabled={isLoading || !expensesData?.data?.length} />
+          <button
+            onClick={() => { setEditExpense(null); setIsModalOpen(true); }}
+            className="flex items-center gap-2 bg-primary hover:bg-emerald-600 text-white px-4 py-2.5 rounded-xl font-medium shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5"
+          >
+            <Plus className="w-5 h-5" /> Enregistrer dépense
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">

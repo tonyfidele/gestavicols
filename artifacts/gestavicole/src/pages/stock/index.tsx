@@ -4,6 +4,8 @@ import { useListStock, useCreateStockItem, useUpdateStockItem, useDeleteStockIte
 import { Plus, Package, AlertTriangle, Loader2, Pencil, Trash2 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { toast } from "sonner";
+import { ExportMenu } from "@/components/ui/export-menu";
+import { exportToExcel, exportToPDF } from "@/lib/export";
 
 const CATEGORIES = ["ALIMENTS", "MEDICAMENTS", "EQUIPEMENT", "AUTRE"];
 const UNITS = ["kg", "L", "unité", "sac", "boîte"];
@@ -51,6 +53,34 @@ export default function Stock() {
     }
   };
 
+  const totalValue = stockData?.data?.reduce((s, i) => s + (i.currentValue || 0), 0) || 0;
+
+  const COLS = [
+    { header: "Article", key: "name", width: 25 },
+    { header: "Catégorie", key: "category", width: 15 },
+    { header: "Quantité", key: "quantity", width: 12 },
+    { header: "Unité", key: "unit", width: 10 },
+    { header: "Seuil min.", key: "minimumLevel", width: 12 },
+    { header: "Prix unit. (FCFA)", key: "unitPrice", width: 18 },
+    { header: "Valeur totale (FCFA)", key: "currentValue", width: 20 },
+    { header: "Statut", key: "status", width: 12 },
+  ];
+
+  const getExportRows = () =>
+    (stockData?.data ?? []).map((item) => ({
+      name: item.name,
+      category: item.category,
+      quantity: item.quantity,
+      unit: item.unit,
+      minimumLevel: item.minimumLevel,
+      unitPrice: item.unitPrice,
+      currentValue: item.currentValue,
+      status: item.quantity <= item.minimumLevel ? "Stock faible" : "Normal",
+    }));
+
+  const handleExcel = () => exportToExcel("rapport_stock", "Stock", COLS, getExportRows());
+  const handlePdf = () => exportToPDF("rapport_stock", "Rapport de Stock", `${stockData?.total || 0} articles — Valeur totale : ${formatCurrency(totalValue)}`, COLS, getExportRows());
+
   return (
     <AppLayout>
       <div className="flex justify-between items-center mb-8">
@@ -58,12 +88,15 @@ export default function Stock() {
           <h1 className="text-3xl font-display font-bold text-slate-900">Stock</h1>
           <p className="text-slate-500 mt-1">Gestion des inventaires et approvisionnements</p>
         </div>
-        <button
-          onClick={() => { setEditItem(null); setIsModalOpen(true); }}
-          className="flex items-center gap-2 bg-primary hover:bg-emerald-600 text-white px-4 py-2.5 rounded-xl font-medium shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5"
-        >
-          <Plus className="w-5 h-5" /> Ajouter article
-        </button>
+        <div className="flex items-center gap-3">
+          <ExportMenu onExcel={handleExcel} onPdf={handlePdf} disabled={isLoading || !stockData?.data?.length} />
+          <button
+            onClick={() => { setEditItem(null); setIsModalOpen(true); }}
+            className="flex items-center gap-2 bg-primary hover:bg-emerald-600 text-white px-4 py-2.5 rounded-xl font-medium shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5"
+          >
+            <Plus className="w-5 h-5" /> Ajouter article
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">

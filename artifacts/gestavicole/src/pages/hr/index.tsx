@@ -5,6 +5,8 @@ import { Users, Plus, Loader2, DollarSign, CheckCircle, Clock, XCircle, Trash2 }
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { ExportMenu } from "@/components/ui/export-menu";
+import { exportToExcel, exportToPDF } from "@/lib/export";
 
 const MONTHS = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
 
@@ -193,6 +195,32 @@ export default function HR() {
   const paidCount = data?.data.filter(s => s.paymentStatus === "PAYE").length ?? 0;
   const pendingCount = data?.data.filter(s => s.paymentStatus === "EN_ATTENTE").length ?? 0;
 
+  const HR_COLS = [
+    { header: "Employé", key: "userName", width: 25 },
+    { header: "Rôle", key: "userRole", width: 15 },
+    { header: "Mois", key: "period", width: 12 },
+    { header: "Salaire de base (FCFA)", key: "baseSalary", width: 22 },
+    { header: "Primes (FCFA)", key: "bonuses", width: 15 },
+    { header: "Retenues (FCFA)", key: "deductions", width: 16 },
+    { header: "Net (FCFA)", key: "netSalary", width: 15 },
+    { header: "Statut", key: "paymentStatus", width: 12 },
+  ];
+
+  const getHrExportRows = () =>
+    (data?.data ?? []).map((s) => ({
+      userName: s.userName ?? "—",
+      userRole: s.userRole ?? "—",
+      period: `${MONTHS[(s.month ?? 1) - 1] ?? s.month} ${s.year}`,
+      baseSalary: s.baseSalary ?? 0,
+      bonuses: s.bonuses ?? 0,
+      deductions: s.deductions ?? 0,
+      netSalary: s.netSalary ?? 0,
+      paymentStatus: s.paymentStatus === "PAYE" ? "Payé" : s.paymentStatus === "EN_ATTENTE" ? "En attente" : "Annulé",
+    }));
+
+  const handleHrExcel = () => exportToExcel("rapport_rh", "Salaires", HR_COLS, getHrExportRows());
+  const handleHrPdf = () => exportToPDF("rapport_rh", "Rapport des Salaires", `Masse salariale : ${totalNetSalary.toLocaleString("fr-ML")} FCFA — ${paidCount} payés, ${pendingCount} en attente`, HR_COLS, getHrExportRows());
+
   const statusBadge = (status: string) => {
     switch (status) {
       case "PAYE": return <span className="flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-full bg-emerald-100 text-emerald-700"><CheckCircle className="w-3 h-3" />Payé</span>;
@@ -209,12 +237,15 @@ export default function HR() {
           <h1 className="text-3xl font-display font-bold text-slate-900">Ressources Humaines</h1>
           <p className="text-slate-500 mt-1">Gestion des salaires et du personnel</p>
         </div>
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="flex items-center gap-2 bg-primary hover:bg-emerald-600 text-white px-4 py-2.5 rounded-xl font-medium shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5"
-        >
-          <Plus className="w-5 h-5" /> Nouvelle fiche
-        </button>
+        <div className="flex items-center gap-3">
+          <ExportMenu onExcel={handleHrExcel} onPdf={handleHrPdf} disabled={isLoading || !data?.data?.length} />
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="flex items-center gap-2 bg-primary hover:bg-emerald-600 text-white px-4 py-2.5 rounded-xl font-medium shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5"
+          >
+            <Plus className="w-5 h-5" /> Nouvelle fiche
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
