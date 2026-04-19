@@ -1749,7 +1749,14 @@ components:
         waterConsumption:
           type: number
           format: float
+        eggsCollected:
+          type: integer
+          nullable: true
         averageWeight:
+          type: number
+          format: float
+          nullable: true
+        temperature:
           type: number
           format: float
           nullable: true
@@ -1785,7 +1792,12 @@ components:
         waterConsumption:
           type: number
           format: float
+        eggsCollected:
+          type: integer
         averageWeight:
+          type: number
+          format: float
+        temperature:
           type: number
           format: float
         notes:

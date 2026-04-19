@@ -11,6 +11,8 @@ export interface CreateDailyRecordRequest {
   mortality: number;
   feedConsumption: number;
   waterConsumption: number;
+  eggsCollected?: number;
   averageWeight?: number;
+  temperature?: number;
   notes?: string;
 }

@@ -1,14 +1,29 @@
 import React, { useState } from "react";
 import { AppLayout } from "@/components/layout/app-layout";
-import { useListBatches, useCreateBatch, useDeleteBatch, useListFarms } from "@workspace/api-client-react";
-import { Plus, Layers, Loader2, ArrowRight, Activity, Trash2 } from "lucide-react";
+import { useListBatches, useCreateBatch, useDeleteBatch, useUpdateBatch, useListFarms } from "@workspace/api-client-react";
+import { Plus, Layers, Loader2, ArrowRight, Activity, Trash2, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "wouter";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
+type Batch = {
+  id: string;
+  name: string;
+  farmId: string;
+  farmName: string;
+  species: string;
+  initialCount: number;
+  currentCount: number;
+  status: string;
+  startDate: string;
+  endDate?: string | null;
+  mortalityRate: number;
+};
+
 export default function Batches() {
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [editTarget, setEditTarget] = useState<Batch | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const { data: batchesData, isLoading, refetch } = useListBatches({ limit: 50 });
   const deleteMutation = useDeleteBatch();
@@ -28,10 +43,19 @@ export default function Batches() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'ACTIF': return 'bg-emerald-100 text-emerald-700 border-emerald-200';
-      case 'TERMINE': return 'bg-slate-100 text-slate-700 border-slate-200';
-      case 'EN_ATTENTE': return 'bg-amber-100 text-amber-700 border-amber-200';
-      default: return 'bg-slate-100 text-slate-700';
+      case "ACTIF": return "bg-emerald-100 text-emerald-700 border-emerald-200";
+      case "TERMINE": return "bg-slate-100 text-slate-700 border-slate-200";
+      case "EN_ATTENTE": return "bg-amber-100 text-amber-700 border-amber-200";
+      default: return "bg-slate-100 text-slate-700";
+    }
+  };
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case "ACTIF": return "Actif";
+      case "TERMINE": return "Terminé";
+      case "EN_ATTENTE": return "En attente";
+      default: return status;
     }
   };
 
@@ -39,11 +63,11 @@ export default function Batches() {
     <AppLayout>
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-3xl font-display font-bold text-slate-900">Lots</h1>
+          <h1 className="text-3xl font-display font-bold text-slate-900">Lots / Bandes</h1>
           <p className="text-slate-500 mt-1">Suivi de vos bandes de volailles</p>
         </div>
-        <button 
-          onClick={() => setIsModalOpen(true)}
+        <button
+          onClick={() => setIsCreateModalOpen(true)}
           className="flex items-center gap-2 bg-primary hover:bg-emerald-600 text-white px-4 py-2.5 rounded-xl font-medium shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5"
         >
           <Plus className="w-5 h-5" /> Nouveau lot
@@ -64,7 +88,7 @@ export default function Batches() {
                   <th className="px-6 py-4 font-semibold">Effectif</th>
                   <th className="px-6 py-4 font-semibold">Mortalité</th>
                   <th className="px-6 py-4 font-semibold">Statut</th>
-                  <th className="px-6 py-4 font-semibold text-right">Action</th>
+                  <th className="px-6 py-4 font-semibold text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -86,20 +110,31 @@ export default function Batches() {
                       <div className="text-xs text-slate-500">sur {batch.initialCount.toLocaleString()}</div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className={`inline-flex items-center gap-1 font-medium ${batch.mortalityRate > 5 ? 'text-red-600' : 'text-emerald-600'}`}>
+                      <span className={`inline-flex items-center gap-1 font-medium ${batch.mortalityRate > 5 ? "text-red-600" : "text-emerald-600"}`}>
                         <Activity className="w-3 h-3" /> {batch.mortalityRate}%
                       </span>
                     </td>
                     <td className="px-6 py-4">
                       <span className={`px-3 py-1 rounded-full text-xs font-bold border ${getStatusColor(batch.status)}`}>
-                        {batch.status}
+                        {getStatusLabel(batch.status)}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
-                        <Link href={`/batches/${batch.id}`} className="inline-flex items-center justify-center p-2 rounded-lg bg-slate-100 text-slate-600 hover:bg-primary hover:text-white transition-colors">
+                        <Link
+                          href={`/batches/${batch.id}`}
+                          className="inline-flex items-center justify-center p-2 rounded-lg bg-slate-100 text-slate-600 hover:bg-primary hover:text-white transition-colors"
+                          title="Voir le détail"
+                        >
                           <ArrowRight className="w-4 h-4" />
                         </Link>
+                        <button
+                          onClick={() => setEditTarget(batch as Batch)}
+                          className="p-2 rounded-lg bg-blue-50 text-blue-500 hover:bg-blue-100 transition-colors"
+                          title="Modifier"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </button>
                         <button
                           onClick={() => setDeleteTarget(batch.id)}
                           className="p-2 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 transition-colors"
@@ -116,13 +151,16 @@ export default function Batches() {
           </div>
           {(!batchesData?.data || batchesData.data.length === 0) && (
             <div className="py-12 text-center">
+              <Layers className="w-12 h-12 text-slate-200 mx-auto mb-3" />
               <p className="text-slate-500 font-medium">Aucun lot trouvé</p>
+              <p className="text-slate-400 text-sm mt-1">Créez votre premier lot pour commencer</p>
             </div>
           )}
         </div>
       )}
 
-      {isModalOpen && <CreateBatchModal onClose={() => setIsModalOpen(false)} onSuccess={refetch} />}
+      {isCreateModalOpen && <CreateBatchModal onClose={() => setIsCreateModalOpen(false)} onSuccess={refetch} />}
+      {editTarget && <EditBatchModal batch={editTarget} onClose={() => setEditTarget(null)} onSuccess={refetch} />}
 
       {deleteTarget && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -142,8 +180,8 @@ export default function Batches() {
   );
 }
 
-function CreateBatchModal({ onClose, onSuccess }: { onClose: () => void, onSuccess: () => void }) {
-  const [formData, setFormData] = useState({ name: "", farmId: "", species: "", initialCount: "", startDate: format(new Date(), 'yyyy-MM-dd') });
+function CreateBatchModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
+  const [formData, setFormData] = useState({ name: "", farmId: "", species: "", initialCount: "", startDate: format(new Date(), "yyyy-MM-dd") });
   const createMutation = useCreateBatch();
   const { data: farmsData } = useListFarms({ limit: 100 });
 
@@ -156,13 +194,14 @@ function CreateBatchModal({ onClose, onSuccess }: { onClose: () => void, onSucce
           farmId: formData.farmId,
           species: formData.species,
           initialCount: parseInt(formData.initialCount, 10),
-          startDate: new Date(formData.startDate).toISOString()
-        }
+          startDate: new Date(formData.startDate).toISOString(),
+        },
       });
+      toast.success("Lot créé avec succès");
       onSuccess();
       onClose();
-    } catch (err) {
-      console.error(err);
+    } catch {
+      toast.error("Erreur lors de la création");
     }
   };
 
@@ -171,18 +210,18 @@ function CreateBatchModal({ onClose, onSuccess }: { onClose: () => void, onSucce
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
         <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
           <h2 className="text-lg font-bold text-slate-900">Nouveau Lot</h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600">&times;</button>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 text-xl">&times;</button>
         </div>
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Référence du lot</label>
-            <input required type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" placeholder="Ex: LOT-2024-01" />
+            <input required type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" placeholder="Ex: LOT-2024-01" />
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Ferme</label>
-            <select required value={formData.farmId} onChange={e => setFormData({...formData, farmId: e.target.value})} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none">
+            <select required value={formData.farmId} onChange={(e) => setFormData({ ...formData, farmId: e.target.value })} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none">
               <option value="">Sélectionner une ferme</option>
-              {farmsData?.data.map(f => (
+              {farmsData?.data.map((f) => (
                 <option key={f.id} value={f.id}>{f.name}</option>
               ))}
             </select>
@@ -190,21 +229,104 @@ function CreateBatchModal({ onClose, onSuccess }: { onClose: () => void, onSucce
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Espèce</label>
-              <input required type="text" value={formData.species} onChange={e => setFormData({...formData, species: e.target.value})} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" placeholder="Ex: Poulet de chair" />
+              <input required type="text" value={formData.species} onChange={(e) => setFormData({ ...formData, species: e.target.value })} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" placeholder="Ex: Poulet de chair" />
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Effectif initial</label>
-              <input required type="number" min="1" value={formData.initialCount} onChange={e => setFormData({...formData, initialCount: e.target.value})} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" />
+              <input required type="number" min="1" value={formData.initialCount} onChange={(e) => setFormData({ ...formData, initialCount: e.target.value })} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" />
             </div>
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Date de démarrage</label>
-            <input required type="date" value={formData.startDate} onChange={e => setFormData({...formData, startDate: e.target.value})} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" />
+            <input required type="date" value={formData.startDate} onChange={(e) => setFormData({ ...formData, startDate: e.target.value })} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" />
           </div>
           <div className="pt-4 flex justify-end gap-3">
             <button type="button" onClick={onClose} className="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-100 font-medium">Annuler</button>
             <button type="submit" disabled={createMutation.isPending} className="px-6 py-2 rounded-xl bg-primary hover:bg-emerald-600 text-white font-medium shadow-md shadow-primary/20 disabled:opacity-50">
               {createMutation.isPending ? "Création..." : "Démarrer le lot"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function EditBatchModal({ batch, onClose, onSuccess }: { batch: Batch; onClose: () => void; onSuccess: () => void }) {
+  const [formData, setFormData] = useState({
+    name: batch.name,
+    species: batch.species,
+    status: batch.status,
+    startDate: batch.startDate ? batch.startDate.split("T")[0] : "",
+    endDate: batch.endDate ? batch.endDate.split("T")[0] : "",
+  });
+  const updateMutation = useUpdateBatch();
+  const { data: farmsData } = useListFarms({ limit: 100 });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await updateMutation.mutateAsync({
+        batchId: batch.id,
+        data: {
+          name: formData.name,
+          species: formData.species,
+          status: formData.status as any,
+          startDate: new Date(formData.startDate).toISOString(),
+          endDate: formData.endDate ? new Date(formData.endDate).toISOString() : undefined,
+        },
+      });
+      toast.success("Lot modifié avec succès");
+      onSuccess();
+      onClose();
+    } catch {
+      toast.error("Erreur lors de la modification");
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
+        <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
+          <h2 className="text-lg font-bold text-slate-900">Modifier le Lot</h2>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 text-xl">&times;</button>
+        </div>
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Référence</label>
+            <input required type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Espèce</label>
+              <input required type="text" value={formData.species} onChange={(e) => setFormData({ ...formData, species: e.target.value })} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Statut</label>
+              <select value={formData.status} onChange={(e) => setFormData({ ...formData, status: e.target.value })} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none">
+                <option value="EN_ATTENTE">En attente</option>
+                <option value="ACTIF">Actif</option>
+                <option value="TERMINE">Terminé</option>
+              </select>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Date de début</label>
+              <input type="date" value={formData.startDate} onChange={(e) => setFormData({ ...formData, startDate: e.target.value })} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Date de fin</label>
+              <input type="date" value={formData.endDate} onChange={(e) => setFormData({ ...formData, endDate: e.target.value })} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" placeholder="Optionnel" />
+            </div>
+          </div>
+          <div className="bg-slate-50 rounded-xl p-3 text-xs text-slate-500">
+            Ferme: <span className="font-medium text-slate-700">{batch.farmName}</span> · Effectif initial: <span className="font-medium text-slate-700">{batch.initialCount.toLocaleString()}</span>
+          </div>
+          <div className="pt-2 flex justify-end gap-3">
+            <button type="button" onClick={onClose} className="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-100 font-medium">Annuler</button>
+            <button type="submit" disabled={updateMutation.isPending} className="px-6 py-2 rounded-xl bg-primary hover:bg-emerald-600 text-white font-medium shadow-md shadow-primary/20 disabled:opacity-50">
+              {updateMutation.isPending ? "Enregistrement..." : "Enregistrer"}
             </button>
           </div>
         </form>

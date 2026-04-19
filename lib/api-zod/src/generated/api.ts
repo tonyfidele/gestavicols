@@ -477,7 +477,9 @@ export const ListDailyRecordsResponse = zod.object({
       mortality: zod.number(),
       feedConsumption: zod.number(),
       waterConsumption: zod.number(),
+      eggsCollected: zod.number().nullish(),
       averageWeight: zod.number().nullish(),
+      temperature: zod.number().nullish(),
       notes: zod.string().nullish(),
       recordedBy: zod.string(),
       createdAt: zod.coerce.date(),
@@ -498,7 +500,9 @@ export const CreateDailyRecordBody = zod.object({
   mortality: zod.number(),
   feedConsumption: zod.number(),
   waterConsumption: zod.number(),
+  eggsCollected: zod.number().optional(),
   averageWeight: zod.number().optional(),
+  temperature: zod.number().optional(),
   notes: zod.string().optional(),
 });
 

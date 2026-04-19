@@ -2,7 +2,7 @@ import React from "react";
 import { AppLayout } from "@/components/layout/app-layout";
 import { useGetDashboardStats } from "@workspace/api-client-react";
 import { formatCurrency } from "@/lib/utils";
-import { Tractor, Layers, Target, DollarSign, Activity, AlertTriangle } from "lucide-react";
+import { Tractor, Layers, Target, DollarSign, Activity, AlertTriangle, SkullIcon } from "lucide-react";
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line
 } from "recharts";
@@ -20,11 +20,14 @@ export default function Dashboard() {
     );
   }
 
+  const mortalityThisWeek = stats?.mortalityThisWeek || 0;
+
   const kpis = [
-    { label: "Fermes Actives", value: stats?.totalFarms || 0, icon: Tractor, color: "text-blue-600", bg: "bg-blue-100" },
-    { label: "Lots en cours", value: stats?.activeBatches || 0, icon: Layers, color: "text-indigo-600", bg: "bg-indigo-100" },
-    { label: "Total Animaux", value: stats?.totalAnimals || 0, icon: Target, color: "text-emerald-600", bg: "bg-emerald-100" },
-    { label: "Alertes Stock", value: stats?.lowStockAlerts || 0, icon: AlertTriangle, color: "text-amber-600", bg: "bg-amber-100" },
+    { label: "Fermes Actives", value: stats?.totalFarms || 0, icon: Tractor, color: "text-blue-600", bg: "bg-blue-100", suffix: "" },
+    { label: "Lots en cours", value: stats?.activeBatches || 0, icon: Layers, color: "text-indigo-600", bg: "bg-indigo-100", suffix: "" },
+    { label: "Total Animaux", value: (stats?.totalAnimals || 0).toLocaleString(), icon: Target, color: "text-emerald-600", bg: "bg-emerald-100", suffix: "" },
+    { label: "Mortalités / 7j", value: mortalityThisWeek, icon: SkullIcon, color: mortalityThisWeek > 0 ? "text-red-600" : "text-slate-400", bg: mortalityThisWeek > 0 ? "bg-red-100" : "bg-slate-100", suffix: "" },
+    { label: "Alertes Stock", value: stats?.lowStockAlerts || 0, icon: AlertTriangle, color: "text-amber-600", bg: "bg-amber-100", suffix: "" },
   ];
 
   const financials = [
@@ -40,18 +43,16 @@ export default function Dashboard() {
         <p className="text-slate-500 mt-1">Gérez et surveillez vos indicateurs de performance clés.</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
         {kpis.map((kpi, i) => (
-          <div key={i} className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-slate-500">{kpi.label}</p>
-                <p className="text-3xl font-bold text-slate-900 mt-2">{kpi.value}</p>
-              </div>
-              <div className={`p-3 rounded-xl ${kpi.bg}`}>
-                <kpi.icon className={`w-6 h-6 ${kpi.color}`} />
+          <div key={i} className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between mb-3">
+              <div className={`p-2.5 rounded-xl ${kpi.bg}`}>
+                <kpi.icon className={`w-5 h-5 ${kpi.color}`} />
               </div>
             </div>
+            <p className="text-2xl font-bold text-slate-900">{kpi.value}</p>
+            <p className="text-xs font-medium text-slate-500 mt-1">{kpi.label}</p>
           </div>
         ))}
       </div>

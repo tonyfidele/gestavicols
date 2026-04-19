@@ -13,7 +13,9 @@ export interface DailyRecord {
   mortality: number;
   feedConsumption: number;
   waterConsumption: number;
+  eggsCollected?: number | null;
   averageWeight?: number | null;
+  temperature?: number | null;
   notes?: string | null;
   recordedBy: string;
   createdAt: Date;

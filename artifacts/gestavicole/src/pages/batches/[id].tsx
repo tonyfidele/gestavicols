@@ -1,8 +1,15 @@
 import React, { useState } from "react";
 import { AppLayout } from "@/components/layout/app-layout";
-import { useGetBatch, useListDailyRecords, useCreateDailyRecord, useListVeterinaryRecords, useCreateVeterinaryRecord } from "@workspace/api-client-react";
-import { Loader2, ArrowLeft, Layers, Activity, Egg, Droplets, Thermometer, Plus, Syringe, Pill, Calendar } from "lucide-react";
-import { Link, useParams } from "wouter";
+import {
+  useGetBatch,
+  useListDailyRecords,
+  useCreateDailyRecord,
+  useListVeterinaryRecords,
+  useCreateVeterinaryRecord,
+  useUpdateBatch,
+} from "@workspace/api-client-react";
+import { Loader2, ArrowLeft, Layers, Activity, Egg, Droplets, Thermometer, Plus, Syringe, Pill, Calendar, SkullIcon, XCircle, CheckCircle2, Pencil } from "lucide-react";
+import { Link, useParams, useLocation } from "wouter";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { toast } from "sonner";
@@ -50,8 +57,9 @@ function AddDailyRecordModal({ batchId, onClose, onSuccess }: { batchId: string;
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-        <div className="p-6 border-b border-slate-100">
+        <div className="p-6 border-b border-slate-100 flex justify-between items-center">
           <h2 className="text-xl font-bold text-slate-900">Relevé Journalier</h2>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 text-2xl">&times;</button>
         </div>
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div>
@@ -112,14 +120,140 @@ function AddDailyRecordModal({ batchId, onClose, onSuccess }: { batchId: string;
   );
 }
 
+function QuickMortalityModal({ batchId, onClose, onSuccess }: { batchId: string; onClose: () => void; onSuccess: () => void }) {
+  const [form, setForm] = useState({
+    date: new Date().toISOString().split("T")[0],
+    mortality: 1,
+    notes: "",
+  });
+  const { mutate: createRecord, isPending } = useCreateDailyRecord();
+  const { user } = useAuth();
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (form.mortality <= 0) { toast.error("Veuillez saisir un nombre de mortalités supérieur à 0"); return; }
+    createRecord(
+      {
+        batchId,
+        data: {
+          date: form.date,
+          mortality: form.mortality,
+          feedConsumption: 0,
+          waterConsumption: 0,
+          notes: form.notes || undefined,
+          recordedBy: user!.id,
+        },
+      },
+      {
+        onSuccess: () => { toast.success(`${form.mortality} mortalité(s) enregistrée(s)`); onSuccess(); onClose(); },
+        onError: () => toast.error("Erreur lors de l'enregistrement"),
+      }
+    );
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm">
+        <div className="p-5 border-b border-slate-100 flex justify-between items-center">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
+              <SkullIcon className="w-4 h-4 text-red-600" />
+            </div>
+            <h2 className="text-lg font-bold text-slate-900">Enregistrer mortalité</h2>
+          </div>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 text-2xl">&times;</button>
+        </div>
+        <form onSubmit={handleSubmit} className="p-5 space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Date</label>
+            <input type="date" required value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })}
+              className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-red-200" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Nombre de morts</label>
+            <input type="number" required min="1" value={form.mortality} onChange={(e) => setForm({ ...form, mortality: Number(e.target.value) })}
+              className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-red-200 text-center text-2xl font-bold text-red-600" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Cause / Notes</label>
+            <textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={2}
+              className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-red-200" placeholder="Cause suspectée..." />
+          </div>
+          <div className="flex gap-3 pt-1">
+            <button type="button" onClick={onClose} className="flex-1 py-2.5 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 hover:bg-slate-50">Annuler</button>
+            <button type="submit" disabled={isPending} className="flex-1 py-2.5 bg-red-600 text-white rounded-xl text-sm font-medium hover:bg-red-700 disabled:opacity-50">
+              {isPending ? "Enregistrement..." : "Enregistrer"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function TerminateBatchModal({ batchId, batchName, onClose, onSuccess }: { batchId: string; batchName: string; onClose: () => void; onSuccess: () => void }) {
+  const updateMutation = useUpdateBatch();
+
+  const handleConfirm = async () => {
+    try {
+      await updateMutation.mutateAsync({
+        batchId,
+        data: {
+          status: "TERMINE" as any,
+          endDate: new Date().toISOString(),
+        },
+      });
+      toast.success("Bande clôturée avec succès");
+      onSuccess();
+      onClose();
+    } catch {
+      toast.error("Erreur lors de la clôture");
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center">
+            <XCircle className="w-5 h-5 text-amber-600" />
+          </div>
+          <h2 className="text-lg font-bold text-slate-900">Clôturer la bande</h2>
+        </div>
+        <p className="text-slate-600 mb-2">
+          Vous êtes sur le point de clôturer la bande <span className="font-bold text-slate-900">"{batchName}"</span>.
+        </p>
+        <p className="text-sm text-slate-500 mb-6">
+          Le statut passera à <span className="font-semibold text-slate-700">Terminé</span> et la date de clôture sera enregistrée à aujourd'hui. Vous pourrez toujours consulter l'historique.
+        </p>
+        <div className="flex gap-3">
+          <button onClick={onClose} className="flex-1 py-2.5 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 hover:bg-slate-50">Annuler</button>
+          <button onClick={handleConfirm} disabled={updateMutation.isPending} className="flex-1 py-2.5 bg-amber-500 text-white rounded-xl text-sm font-medium hover:bg-amber-600 disabled:opacity-50">
+            {updateMutation.isPending ? "Clôture..." : "Confirmer la clôture"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function BatchDetail() {
   const { id } = useParams<{ id: string }>();
+  const [, navigate] = useLocation();
   const [isDailyModalOpen, setIsDailyModalOpen] = useState(false);
+  const [isMortalityModalOpen, setIsMortalityModalOpen] = useState(false);
+  const [isTerminateModalOpen, setIsTerminateModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"daily" | "vet">("daily");
 
-  const { data: batchData, isLoading: batchLoading } = useGetBatch({ batchId: id ?? "" });
-  const { data: dailyRecords, refetch: refetchDaily, isLoading: dailyLoading } = useListDailyRecords({ batchId: id ?? "" }, { limit: 30 });
-  const { data: vetRecords, refetch: refetchVet, isLoading: vetLoading } = useListVeterinaryRecords({ batchId: id ?? "" });
+  const {
+    data: batchData,
+    isLoading: batchLoading,
+    isError: batchError,
+    refetch: refetchBatch,
+  } = useGetBatch(id ?? "", { query: { enabled: !!id } });
+
+  const { data: dailyRecords, refetch: refetchDaily, isLoading: dailyLoading } = useListDailyRecords(id ?? "", { limit: 30 }, { query: { enabled: !!id } });
+  const { data: vetRecords, refetch: refetchVet, isLoading: vetLoading } = useListVeterinaryRecords(id ?? "", { query: { enabled: !!id } });
 
   const batch = batchData;
 
@@ -131,6 +265,23 @@ export default function BatchDetail() {
     temp: r.temperature ?? 0,
   }));
 
+  const handleRefreshAll = () => {
+    refetchBatch();
+    refetchDaily();
+  };
+
+  if (!id) {
+    return (
+      <AppLayout>
+        <div className="text-center py-24">
+          <Layers className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+          <p className="text-slate-500 font-medium">Identifiant de bande manquant</p>
+          <Link href="/batches" className="text-primary hover:underline text-sm mt-2 inline-block">← Retour aux lots</Link>
+        </div>
+      </AppLayout>
+    );
+  }
+
   if (batchLoading) {
     return (
       <AppLayout>
@@ -139,18 +290,27 @@ export default function BatchDetail() {
     );
   }
 
-  if (!batch) {
+  if (batchError || !batch) {
     return (
       <AppLayout>
         <div className="text-center py-24">
-          <p className="text-slate-500">Bande introuvable</p>
-          <Link href="/batches" className="text-primary hover:underline text-sm mt-2 inline-block">← Retour aux lots</Link>
+          <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <Layers className="w-8 h-8 text-slate-400" />
+          </div>
+          <h2 className="text-xl font-bold text-slate-900 mb-2">Bande introuvable</h2>
+          <p className="text-slate-500 mb-4">Cette bande n'existe pas ou vous n'avez pas les permissions pour y accéder.</p>
+          <Link href="/batches" className="inline-flex items-center gap-2 text-primary hover:underline text-sm font-medium">
+            <ArrowLeft className="w-4 h-4" /> Retour aux lots
+          </Link>
         </div>
       </AppLayout>
     );
   }
 
-  const statusColor = batch.status === "ACTIF" ? "bg-emerald-100 text-emerald-700" : batch.status === "TERMINE" ? "bg-slate-100 text-slate-700" : "bg-amber-100 text-amber-700";
+  const statusColor = batch.status === "ACTIF" ? "bg-emerald-100 text-emerald-700 border-emerald-200" : batch.status === "TERMINE" ? "bg-slate-100 text-slate-700 border-slate-200" : "bg-amber-100 text-amber-700 border-amber-200";
+  const statusLabel = batch.status === "ACTIF" ? "Actif" : batch.status === "TERMINE" ? "Terminé" : "En attente";
+  const isActive = batch.status === "ACTIF";
+  const isPending = batch.status === "EN_ATTENTE";
 
   return (
     <AppLayout>
@@ -158,7 +318,7 @@ export default function BatchDetail() {
         <Link href="/batches" className="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-700 transition-colors mb-4">
           <ArrowLeft className="w-4 h-4" /> Retour aux lots
         </Link>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-indigo-100 rounded-2xl flex items-center justify-center">
               <Layers className="w-6 h-6 text-indigo-600" />
@@ -167,16 +327,34 @@ export default function BatchDetail() {
               <h1 className="text-3xl font-display font-bold text-slate-900">{batch.name}</h1>
               <p className="text-slate-500">{batch.farmName} · {batch.species}</p>
             </div>
-            <span className={`px-3 py-1 rounded-full text-xs font-bold border ${statusColor}`}>{batch.status}</span>
+            <span className={`px-3 py-1 rounded-full text-xs font-bold border ${statusColor}`}>{statusLabel}</span>
           </div>
-          {batch.status === "ACTIF" && (
-            <button
-              onClick={() => setIsDailyModalOpen(true)}
-              className="flex items-center gap-2 bg-primary hover:bg-emerald-600 text-white px-4 py-2.5 rounded-xl font-medium shadow-lg shadow-primary/20 transition-all"
-            >
-              <Plus className="w-5 h-5" /> Relevé du jour
-            </button>
-          )}
+          <div className="flex flex-wrap items-center gap-2">
+            {(isActive || isPending) && (
+              <button
+                onClick={() => setIsMortalityModalOpen(true)}
+                className="flex items-center gap-2 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 px-4 py-2.5 rounded-xl font-medium transition-all text-sm"
+              >
+                <SkullIcon className="w-4 h-4" /> Mortalité
+              </button>
+            )}
+            {isActive && (
+              <>
+                <button
+                  onClick={() => setIsDailyModalOpen(true)}
+                  className="flex items-center gap-2 bg-primary hover:bg-emerald-600 text-white px-4 py-2.5 rounded-xl font-medium shadow-lg shadow-primary/20 transition-all text-sm"
+                >
+                  <Plus className="w-4 h-4" /> Relevé du jour
+                </button>
+                <button
+                  onClick={() => setIsTerminateModalOpen(true)}
+                  className="flex items-center gap-2 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 px-4 py-2.5 rounded-xl font-medium transition-all text-sm"
+                >
+                  <CheckCircle2 className="w-4 h-4" /> Clôturer la bande
+                </button>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
@@ -186,7 +364,7 @@ export default function BatchDetail() {
           <p className="text-2xl font-bold text-slate-900">{batch.currentCount.toLocaleString()}</p>
           <p className="text-xs text-slate-400">sur {batch.initialCount.toLocaleString()} initiaux</p>
         </div>
-        <div className="bg-white rounded-2xl border border-slate-200 p-5">
+        <div className={`rounded-2xl border p-5 ${batch.mortalityRate > 5 ? "bg-red-50 border-red-200" : "bg-white border-slate-200"}`}>
           <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-1">Taux mortalité</p>
           <p className={`text-2xl font-bold ${batch.mortalityRate > 5 ? "text-red-600" : "text-emerald-600"}`}>{batch.mortalityRate}%</p>
           <p className="text-xs text-slate-400">{batch.mortalityRate > 5 ? "⚠ Élevé" : "✓ Normal"}</p>
@@ -203,9 +381,19 @@ export default function BatchDetail() {
         </div>
       </div>
 
+      {batch.status === "TERMINE" && batch.endDate && (
+        <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 mb-6 flex items-center gap-3">
+          <CheckCircle2 className="w-5 h-5 text-slate-500 shrink-0" />
+          <div>
+            <p className="font-semibold text-slate-700">Bande clôturée</p>
+            <p className="text-sm text-slate-500">Exercice terminé le {format(new Date(batch.endDate), "dd MMMM yyyy", { locale: fr })}</p>
+          </div>
+        </div>
+      )}
+
       {chartData.length > 0 && (
         <div className="bg-white rounded-2xl border border-slate-200 p-6 mb-6">
-          <h2 className="text-sm font-bold text-slate-700 uppercase tracking-wider mb-4">Évolution mortalité (30 derniers jours)</h2>
+          <h2 className="text-sm font-bold text-slate-700 uppercase tracking-wider mb-4">Évolution mortalité (30 derniers relevés)</h2>
           <ResponsiveContainer width="100%" height={200}>
             <LineChart data={chartData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
@@ -241,6 +429,9 @@ export default function BatchDetail() {
             <div className="py-12 text-center">
               <Activity className="w-10 h-10 text-slate-300 mx-auto mb-3" />
               <p className="text-slate-500">Aucun relevé journalier</p>
+              {(isActive || isPending) && (
+                <button onClick={() => setIsDailyModalOpen(true)} className="mt-3 text-primary text-sm hover:underline">+ Ajouter le premier relevé</button>
+              )}
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -316,7 +507,16 @@ export default function BatchDetail() {
         </div>
       )}
 
-      {isDailyModalOpen && <AddDailyRecordModal batchId={id ?? ""} onClose={() => setIsDailyModalOpen(false)} onSuccess={refetchDaily} />}
+      {isDailyModalOpen && <AddDailyRecordModal batchId={id ?? ""} onClose={() => setIsDailyModalOpen(false)} onSuccess={handleRefreshAll} />}
+      {isMortalityModalOpen && <QuickMortalityModal batchId={id ?? ""} onClose={() => setIsMortalityModalOpen(false)} onSuccess={handleRefreshAll} />}
+      {isTerminateModalOpen && batch && (
+        <TerminateBatchModal
+          batchId={id ?? ""}
+          batchName={batch.name}
+          onClose={() => setIsTerminateModalOpen(false)}
+          onSuccess={() => { refetchBatch(); }}
+        />
+      )}
     </AppLayout>
   );
 }

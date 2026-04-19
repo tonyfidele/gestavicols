@@ -189,7 +189,9 @@ export interface DailyRecord {
   mortality: number;
   feedConsumption: number;
   waterConsumption: number;
+  eggsCollected?: number | null;
   averageWeight?: number | null;
+  temperature?: number | null;
   notes?: string | null;
   recordedBy: string;
   createdAt: string;
@@ -200,7 +202,9 @@ export interface CreateDailyRecordRequest {
   mortality: number;
   feedConsumption: number;
   waterConsumption: number;
+  eggsCollected?: number;
   averageWeight?: number;
+  temperature?: number;
   notes?: string;
 }
 
