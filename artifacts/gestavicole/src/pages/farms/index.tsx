@@ -1,13 +1,37 @@
 import React, { useState } from "react";
 import { AppLayout } from "@/components/layout/app-layout";
-import { useListFarms, useCreateFarm } from "@workspace/api-client-react";
-import { MapPin, Users, Tractor, Plus, Loader2 } from "lucide-react";
-import { format } from "date-fns";
+import { useListFarms, useCreateFarm, useDeleteFarm } from "@workspace/api-client-react";
+import { MapPin, Users, Tractor, Plus, Loader2, Trash2, AlertTriangle } from "lucide-react";
+import { toast } from "sonner";
+
+type Farm = {
+  id: string;
+  name: string;
+  location: string;
+  capacity: number;
+  buildingsCount: number;
+  activeBatchesCount: number;
+};
 
 export default function Farms() {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<Farm | null>(null);
   const { data: farmsData, isLoading, refetch } = useListFarms({ limit: 50 });
-  
+  const deleteMutation = useDeleteFarm();
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    try {
+      await deleteMutation.mutateAsync({ farmId: deleteTarget.id });
+      toast.success(`Ferme "${deleteTarget.name}" supprimée avec toutes ses données`);
+      refetch();
+    } catch {
+      toast.error("Erreur lors de la suppression");
+    } finally {
+      setDeleteTarget(null);
+    }
+  };
+
   return (
     <AppLayout>
       <div className="flex justify-between items-center mb-8">
@@ -15,7 +39,7 @@ export default function Farms() {
           <h1 className="text-3xl font-display font-bold text-slate-900">Fermes</h1>
           <p className="text-slate-500 mt-1">Gérez vos sites d'exploitation</p>
         </div>
-        <button 
+        <button
           onClick={() => setIsModalOpen(true)}
           className="flex items-center gap-2 bg-primary hover:bg-emerald-600 text-white px-4 py-2.5 rounded-xl font-medium shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5"
         >
@@ -28,12 +52,20 @@ export default function Farms() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {farmsData?.data.map((farm) => (
-            <div key={farm.id} className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm hover:shadow-xl hover:border-primary/30 transition-all duration-300 group">
+            <div key={farm.id} className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm hover:shadow-xl hover:border-primary/30 transition-all duration-300 group relative">
+              <button
+                onClick={() => setDeleteTarget(farm as Farm)}
+                className="absolute top-4 right-4 p-2 rounded-xl text-slate-300 hover:text-red-500 hover:bg-red-50 transition-colors opacity-0 group-hover:opacity-100"
+                title="Supprimer la ferme"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+
               <div className="w-12 h-12 rounded-xl bg-emerald-50 text-primary flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                 <Tractor className="w-6 h-6" />
               </div>
-              <h3 className="text-xl font-bold text-slate-900 mb-2">{farm.name}</h3>
-              
+              <h3 className="text-xl font-bold text-slate-900 mb-2 pr-8">{farm.name}</h3>
+
               <div className="space-y-2 mt-4">
                 <div className="flex items-center gap-3 text-slate-600 text-sm">
                   <MapPin className="w-4 h-4 text-slate-400" />
@@ -44,7 +76,7 @@ export default function Farms() {
                   Capacité: {farm.capacity.toLocaleString()}
                 </div>
               </div>
-              
+
               <div className="mt-6 pt-6 border-t border-slate-100 flex justify-between items-center">
                 <div className="text-center">
                   <p className="text-2xl font-bold text-slate-800">{farm.buildingsCount}</p>
@@ -67,11 +99,56 @@ export default function Farms() {
       )}
 
       {isModalOpen && <CreateFarmModal onClose={() => setIsModalOpen(false)} onSuccess={refetch} />}
+
+      {deleteTarget && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 animate-in fade-in zoom-in duration-200">
+            <div className="flex items-start gap-4 mb-5">
+              <div className="w-12 h-12 bg-red-100 rounded-2xl flex items-center justify-center shrink-0">
+                <AlertTriangle className="w-6 h-6 text-red-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-slate-900 mb-1">Supprimer la ferme</h3>
+                <p className="text-slate-600">
+                  Vous êtes sur le point de supprimer <span className="font-bold text-slate-900">"{deleteTarget.name}"</span>.
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
+              <p className="text-sm font-semibold text-red-700 mb-2">⚠ Cette action est irréversible et supprimera :</p>
+              <ul className="text-sm text-red-600 space-y-1">
+                <li>• Tous les <strong>{deleteTarget.buildingsCount}</strong> bâtiment(s)</li>
+                <li>• Tous les lots / bandes rattachés</li>
+                <li>• Tous les relevés journaliers et vétérinaires</li>
+                <li>• Toutes les ventes et dépenses liées</li>
+                <li>• Toutes les productions d'œufs</li>
+              </ul>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setDeleteTarget(null)}
+                className="flex-1 py-2.5 border border-slate-200 rounded-xl text-slate-700 hover:bg-slate-50 font-medium transition-colors"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={deleteMutation.isPending}
+                className="flex-1 py-2.5 bg-red-600 text-white rounded-xl hover:bg-red-700 font-medium transition-colors disabled:opacity-50"
+              >
+                {deleteMutation.isPending ? "Suppression..." : "Supprimer définitivement"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </AppLayout>
   );
 }
 
-function CreateFarmModal({ onClose, onSuccess }: { onClose: () => void, onSuccess: () => void }) {
+function CreateFarmModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
   const [formData, setFormData] = useState({ name: "", location: "", capacity: "" });
   const createMutation = useCreateFarm();
 
@@ -83,12 +160,13 @@ function CreateFarmModal({ onClose, onSuccess }: { onClose: () => void, onSucces
           name: formData.name,
           location: formData.location,
           capacity: parseInt(formData.capacity, 10),
-        }
+        },
       });
+      toast.success("Ferme créée avec succès");
       onSuccess();
       onClose();
-    } catch (err) {
-      console.error(err);
+    } catch {
+      toast.error("Erreur lors de la création");
     }
   };
 
@@ -97,20 +175,23 @@ function CreateFarmModal({ onClose, onSuccess }: { onClose: () => void, onSucces
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
         <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
           <h2 className="text-lg font-bold text-slate-900">Nouvelle Ferme</h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600">&times;</button>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 text-2xl leading-none">&times;</button>
         </div>
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Nom de la ferme</label>
-            <input required type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" />
+            <input required type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" />
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Localisation</label>
-            <input required type="text" value={formData.location} onChange={e => setFormData({...formData, location: e.target.value})} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" />
+            <input required type="text" value={formData.location} onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+              className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" />
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Capacité totale</label>
-            <input required type="number" min="1" value={formData.capacity} onChange={e => setFormData({...formData, capacity: e.target.value})} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" />
+            <input required type="number" min="1" value={formData.capacity} onChange={(e) => setFormData({ ...formData, capacity: e.target.value })}
+              className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" />
           </div>
           <div className="pt-4 flex justify-end gap-3">
             <button type="button" onClick={onClose} className="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-100 font-medium">Annuler</button>

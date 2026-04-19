@@ -1,8 +1,18 @@
 import { Router, type IRouter } from "express";
 import { randomUUID } from "crypto";
-import { eq, and, isNull, count, sql } from "drizzle-orm";
+import { eq, and, isNull, count, sql, inArray } from "drizzle-orm";
 import { db } from "@workspace/db";
-import { farmsTable, buildingsTable, batchesTable, usersTable } from "@workspace/db";
+import {
+  farmsTable,
+  buildingsTable,
+  batchesTable,
+  usersTable,
+  dailyRecordsTable,
+  veterinaryRecordsTable,
+  salesTable,
+  expensesTable,
+  eggProductionsTable,
+} from "@workspace/db";
 import {
   ListFarmsQueryParams,
   ListFarmsResponse,
@@ -267,8 +277,24 @@ router.delete(
     }
 
     const now = new Date();
+
+    const farmBatches = await db
+      .select({ id: batchesTable.id })
+      .from(batchesTable)
+      .where(eq(batchesTable.farmId, deleted.id));
+    const batchIds = farmBatches.map((b) => b.id);
+
+    if (batchIds.length > 0) {
+      await db.delete(dailyRecordsTable).where(inArray(dailyRecordsTable.batchId, batchIds));
+      await db.delete(veterinaryRecordsTable).where(inArray(veterinaryRecordsTable.batchId, batchIds));
+      await db.update(salesTable).set({ deletedAt: now }).where(and(inArray(salesTable.batchId, batchIds), isNull(salesTable.deletedAt)));
+    }
+
+    await db.update(salesTable).set({ deletedAt: now }).where(and(eq(salesTable.farmId, deleted.id), isNull(salesTable.deletedAt)));
+    await db.update(expensesTable).set({ deletedAt: now }).where(and(eq(expensesTable.farmId, deleted.id), isNull(expensesTable.deletedAt)));
+    await db.delete(eggProductionsTable).where(eq(eggProductionsTable.farmId, deleted.id));
+    await db.update(batchesTable).set({ deletedAt: now }).where(eq(batchesTable.farmId, deleted.id));
     await db.update(buildingsTable).set({ deletedAt: now }).where(eq(buildingsTable.farmId, deleted.id));
-    await db.update(batchesTable).set({ deletedAt: now }).where(and(eq(batchesTable.farmId, deleted.id), isNull(batchesTable.deletedAt)));
 
     await logAudit(user, "DELETE_FARM", "FARM", deleted.id, `Cascade deleted farm ${deleted.name}`);
     res.json(DeleteFarmResponse.parse({ message: "Ferme et toutes ses données supprimées" }));
