@@ -84,7 +84,7 @@ router.get(
           .from(batchesTable)
           .where(and(
             eq(batchesTable.farmId, farm.id),
-            ne(batchesTable.status, "TERMINÉ"),
+            ne(batchesTable.status, "TERMINE"),
             isNull(batchesTable.deletedAt)
           ));
 
@@ -190,7 +190,7 @@ router.get(
     const [batchCount] = await db
       .select({ count: count() })
       .from(batchesTable)
-      .where(and(eq(batchesTable.farmId, farm.id), ne(batchesTable.status, "TERMINÉ"), isNull(batchesTable.deletedAt)));
+      .where(and(eq(batchesTable.farmId, farm.id), ne(batchesTable.status, "TERMINE"), isNull(batchesTable.deletedAt)));
 
     res.json(
       GetFarmResponse.parse({
