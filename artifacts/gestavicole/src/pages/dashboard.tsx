@@ -23,11 +23,11 @@ export default function Dashboard() {
   const mortalityThisWeek = stats?.mortalityThisWeek || 0;
 
   const kpis = [
-    { label: "Fermes Actives", value: stats?.totalFarms || 0, icon: Tractor, color: "text-blue-600", bg: "bg-blue-100", suffix: "" },
-    { label: "Lots en cours", value: stats?.activeBatches || 0, icon: Layers, color: "text-indigo-600", bg: "bg-indigo-100", suffix: "" },
-    { label: "Total Animaux", value: (stats?.totalAnimals || 0).toLocaleString(), icon: Target, color: "text-emerald-600", bg: "bg-emerald-100", suffix: "" },
-    { label: "Mortalités / 7j", value: mortalityThisWeek, icon: SkullIcon, color: mortalityThisWeek > 0 ? "text-red-600" : "text-slate-400", bg: mortalityThisWeek > 0 ? "bg-red-100" : "bg-slate-100", suffix: "" },
-    { label: "Alertes Stock", value: stats?.lowStockAlerts || 0, icon: AlertTriangle, color: "text-amber-600", bg: "bg-amber-100", suffix: "" },
+    { label: "Fermes Actives", value: stats?.totalFarms || 0, icon: Tractor, color: "text-blue-600", bg: "bg-blue-100", suffix: "", sold: null },
+    { label: "Lots en cours", value: stats?.activeBatches || 0, icon: Layers, color: "text-indigo-600", bg: "bg-indigo-100", suffix: "", sold: null },
+    { label: "Total Animaux", value: (stats?.totalAnimals || 0).toLocaleString(), icon: Target, color: "text-emerald-600", bg: "bg-emerald-100", suffix: "", sold: stats?.totalAnimalsSold || 0 },
+    { label: "Mortalités / 7j", value: mortalityThisWeek, icon: SkullIcon, color: mortalityThisWeek > 0 ? "text-red-600" : "text-slate-400", bg: mortalityThisWeek > 0 ? "bg-red-100" : "bg-slate-100", suffix: "", sold: null },
+    { label: "Alertes Stock", value: stats?.lowStockAlerts || 0, icon: AlertTriangle, color: "text-amber-600", bg: "bg-amber-100", suffix: "", sold: null },
   ];
 
   const financials = [
@@ -53,6 +53,12 @@ export default function Dashboard() {
             </div>
             <p className="text-2xl font-bold text-slate-900">{kpi.value}</p>
             <p className="text-xs font-medium text-slate-500 mt-1">{kpi.label}</p>
+            {kpi.sold !== null && (
+              <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between">
+                <span className="text-xs text-slate-400">Vendus</span>
+                <span className="text-xs font-bold text-orange-500">{(kpi.sold as number).toLocaleString()}</span>
+              </div>
+            )}
           </div>
         ))}
       </div>

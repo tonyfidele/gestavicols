@@ -51,6 +51,11 @@ router.get(
       .from(batchesTable)
       .where(and(...batchConds, eq(batchesTable.status, "ACTIF")));
 
+    const [totalAnimalsSold] = await db
+      .select({ total: sum(salesTable.quantity) })
+      .from(salesTable)
+      .where(and(...saleConds, eq(salesTable.type, "ANIMAUX")));
+
     const [monthlyRevenue] = await db
       .select({ total: sum(salesTable.totalAmount) })
       .from(salesTable)
@@ -125,6 +130,7 @@ router.get(
         totalBatches: batchCount?.count ?? 0,
         activeBatches: activeBatchCount?.count ?? 0,
         totalAnimals: Number(totalAnimals?.total) || 0,
+        totalAnimalsSold: Number(totalAnimalsSold?.total) || 0,
         monthlyRevenue: revenue,
         monthlyExpenses: expenses,
         netProfit: revenue - expenses,
