@@ -9,7 +9,7 @@ import {
   useCreateStockMovement,
   useListBatches,
 } from "@workspace/api-client-react";
-import { Plus, Package, AlertTriangle, Loader2, Pencil, Trash2, ArrowDownCircle, ArrowUpCircle, History, Wheat } from "lucide-react";
+import { Plus, Package, AlertTriangle, Loader2, Pencil, Trash2, ArrowDownCircle, ArrowUpCircle, History, ShoppingBag } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { toast } from "sonner";
 import { ExportMenu } from "@/components/ui/export-menu";
@@ -107,7 +107,7 @@ export default function StockPage() {
             onClick={() => setConsumptionModal(true)}
             className="flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-4 py-2.5 rounded-xl font-medium shadow-lg shadow-amber-500/20 transition-all hover:-translate-y-0.5"
           >
-            <Wheat className="w-5 h-5" /> Consommation
+            <ShoppingBag className="w-5 h-5" /> Consommation
           </button>
           <button
             onClick={() => { setEditItem(null); setIsModalOpen(true); }}
@@ -433,7 +433,7 @@ function ConsommationModal({
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
         <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
           <div className="flex items-center gap-2">
-            <Wheat className="w-5 h-5 text-amber-500" />
+            <ShoppingBag className="w-5 h-5 text-amber-500" />
             <h2 className="text-lg font-bold text-slate-900">Mouvement de Stock</h2>
           </div>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600 text-2xl leading-none">&times;</button>
