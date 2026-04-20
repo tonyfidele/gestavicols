@@ -278,12 +278,12 @@ function EggModal({ record, onClose, onSuccess }: { record: EggRecord | null; on
 
   return (
     <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg flex flex-col max-h-[92vh]">
+        <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center shrink-0">
           <h2 className="text-lg font-bold text-slate-900">{isEdit ? "Modifier la collecte" : "Enregistrer une collecte"}</h2>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600 text-2xl leading-none">&times;</button>
         </div>
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto">
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Ferme *</label>
