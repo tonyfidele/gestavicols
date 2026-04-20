@@ -2071,6 +2071,84 @@ export const useCreateDailyRecord = <
 };
 
 /**
+ * @summary Update a daily record
+ */
+export const updateDailyRecord = async (
+  batchId: string,
+  recordId: string,
+  updateDailyRecordRequest: Partial<CreateDailyRecordRequest>,
+  options?: RequestInit,
+): Promise<DailyRecord> => {
+  return customFetch<DailyRecord>(
+    `/api/batches/${batchId}/daily-records/${recordId}`,
+    {
+      ...options,
+      method: "PUT",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(updateDailyRecordRequest),
+    },
+  );
+};
+
+export const useUpdateDailyRecord = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateDailyRecord>>,
+    TError,
+    { batchId: string; recordId: string; data: Partial<CreateDailyRecordRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateDailyRecord>>,
+  TError,
+  { batchId: string; recordId: string; data: Partial<CreateDailyRecordRequest> },
+  TContext
+> => {
+  const mutationFn = ({ batchId, recordId, data }: { batchId: string; recordId: string; data: Partial<CreateDailyRecordRequest> }) =>
+    updateDailyRecord(batchId, recordId, data, options?.request as RequestInit | undefined);
+  return useMutation({ mutationFn, ...options?.mutation });
+};
+
+/**
+ * @summary Delete a daily record
+ */
+export const deleteDailyRecord = async (
+  batchId: string,
+  recordId: string,
+  options?: RequestInit,
+): Promise<{ message: string }> => {
+  return customFetch<{ message: string }>(
+    `/api/batches/${batchId}/daily-records/${recordId}`,
+    { ...options, method: "DELETE" },
+  );
+};
+
+export const useDeleteDailyRecord = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteDailyRecord>>,
+    TError,
+    { batchId: string; recordId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteDailyRecord>>,
+  TError,
+  { batchId: string; recordId: string },
+  TContext
+> => {
+  const mutationFn = ({ batchId, recordId }: { batchId: string; recordId: string }) =>
+    deleteDailyRecord(batchId, recordId, options?.request as RequestInit | undefined);
+  return useMutation({ mutationFn, ...options?.mutation });
+};
+
+/**
  * @summary List sales in tenant
  */
 export const getListSalesUrl = (params?: ListSalesParams) => {

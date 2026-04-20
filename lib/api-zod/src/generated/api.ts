@@ -507,6 +507,33 @@ export const CreateDailyRecordBody = zod.object({
 });
 
 /**
+ * @summary Update a daily record
+ */
+export const UpdateDailyRecordParams = zod.object({
+  batchId: zod.coerce.string(),
+  recordId: zod.coerce.string(),
+});
+
+export const UpdateDailyRecordBody = zod.object({
+  date: zod.string().optional(),
+  mortality: zod.number().optional(),
+  feedConsumption: zod.number().optional(),
+  waterConsumption: zod.number().optional(),
+  eggsCollected: zod.number().nullable().optional(),
+  averageWeight: zod.number().nullable().optional(),
+  temperature: zod.number().nullable().optional(),
+  notes: zod.string().nullable().optional(),
+});
+
+/**
+ * @summary Delete a daily record
+ */
+export const DeleteDailyRecordParams = zod.object({
+  batchId: zod.coerce.string(),
+  recordId: zod.coerce.string(),
+});
+
+/**
  * @summary List sales in tenant
  */
 export const listSalesQueryPageDefault = 1;

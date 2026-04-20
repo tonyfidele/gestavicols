@@ -4,10 +4,13 @@ import {
   useGetBatch,
   useListDailyRecords,
   useCreateDailyRecord,
+  useUpdateDailyRecord,
+  useDeleteDailyRecord,
   useListVeterinaryRecords,
   useCreateVeterinaryRecord,
   useDeleteVeterinaryRecord,
   useUpdateBatch,
+  type DailyRecord,
 } from "@workspace/api-client-react";
 import { Loader2, ArrowLeft, Layers, Activity, Egg, Droplets, Thermometer, Plus, Syringe, Pill, Calendar, SkullIcon, XCircle, CheckCircle2, Pencil, Trash2 } from "lucide-react";
 import { Link, useParams, useLocation } from "wouter";
@@ -113,6 +116,109 @@ function AddDailyRecordModal({ batchId, onClose, onSuccess }: { batchId: string;
             <button type="button" onClick={onClose} className="flex-1 py-2.5 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors">Annuler</button>
             <button type="submit" disabled={isPending} className="flex-1 py-2.5 bg-primary text-white rounded-xl text-sm font-medium hover:bg-emerald-600 transition-colors disabled:opacity-50">
               {isPending ? "Enregistrement..." : "Enregistrer"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function EditDailyRecordModal({ batchId, record, onClose, onSuccess }: { batchId: string; record: DailyRecord; onClose: () => void; onSuccess: () => void }) {
+  const [form, setForm] = useState({
+    date: record.date.split("T")[0],
+    mortality: record.mortality,
+    feedConsumption: record.feedConsumption,
+    waterConsumption: record.waterConsumption,
+    eggsCollected: record.eggsCollected ?? undefined as number | undefined,
+    averageWeight: record.averageWeight ?? undefined as number | undefined,
+    temperature: record.temperature ?? undefined as number | undefined,
+    notes: record.notes ?? "",
+  });
+  const { mutate: updateRecord, isPending } = useUpdateDailyRecord();
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    updateRecord(
+      {
+        batchId,
+        recordId: record.id,
+        data: {
+          date: form.date,
+          mortality: form.mortality,
+          feedConsumption: form.feedConsumption,
+          waterConsumption: form.waterConsumption,
+          eggsCollected: form.eggsCollected,
+          averageWeight: form.averageWeight,
+          temperature: form.temperature,
+          notes: form.notes || undefined,
+        },
+      },
+      {
+        onSuccess: () => { toast.success("Relevé mis à jour"); onSuccess(); onClose(); },
+        onError: () => toast.error("Erreur lors de la mise à jour"),
+      }
+    );
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+        <div className="p-6 border-b border-slate-100 flex justify-between items-center">
+          <h2 className="text-xl font-bold text-slate-900">Modifier le Relevé Journalier</h2>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 text-2xl">&times;</button>
+        </div>
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Date *</label>
+            <input type="date" required value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })}
+              className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Mortalité</label>
+              <input type="number" min="0" value={form.mortality} onChange={(e) => setForm({ ...form, mortality: Number(e.target.value) })}
+                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Température (°C)</label>
+              <input type="number" step="0.1" value={form.temperature ?? ""} onChange={(e) => setForm({ ...form, temperature: e.target.value ? Number(e.target.value) : undefined })}
+                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" placeholder="ex: 25.5" />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Aliment consommé (kg)</label>
+              <input type="number" min="0" step="0.1" value={form.feedConsumption} onChange={(e) => setForm({ ...form, feedConsumption: Number(e.target.value) })}
+                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Eau consommée (L)</label>
+              <input type="number" min="0" step="0.1" value={form.waterConsumption} onChange={(e) => setForm({ ...form, waterConsumption: Number(e.target.value) })}
+                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Œufs collectés</label>
+              <input type="number" min="0" value={form.eggsCollected ?? ""} onChange={(e) => setForm({ ...form, eggsCollected: e.target.value ? Number(e.target.value) : undefined })}
+                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" placeholder="Pour pondeuses" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Poids moyen (kg)</label>
+              <input type="number" min="0" step="0.01" value={form.averageWeight ?? ""} onChange={(e) => setForm({ ...form, averageWeight: e.target.value ? Number(e.target.value) : undefined })}
+                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" placeholder="Pour chair" />
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Notes</label>
+            <textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={2}
+              className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" placeholder="Observations..." />
+          </div>
+          <div className="flex gap-3 pt-2">
+            <button type="button" onClick={onClose} className="flex-1 py-2.5 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors">Annuler</button>
+            <button type="submit" disabled={isPending} className="flex-1 py-2.5 bg-primary text-white rounded-xl text-sm font-medium hover:bg-emerald-600 transition-colors disabled:opacity-50">
+              {isPending ? "Enregistrement..." : "Mettre à jour"}
             </button>
           </div>
         </form>
@@ -363,6 +469,8 @@ export default function BatchDetail() {
   const [isTerminateModalOpen, setIsTerminateModalOpen] = useState(false);
   const [isVetModalOpen, setIsVetModalOpen] = useState(false);
   const [deletingVetId, setDeletingVetId] = useState<string | null>(null);
+  const [editingDailyRecord, setEditingDailyRecord] = useState<DailyRecord | null>(null);
+  const [deletingDailyId, setDeletingDailyId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"daily" | "vet">("daily");
 
   const {
@@ -375,6 +483,17 @@ export default function BatchDetail() {
   const { data: dailyRecords, refetch: refetchDaily, isLoading: dailyLoading } = useListDailyRecords(id ?? "", { limit: 30 }, { query: { enabled: !!id } });
   const { data: vetRecords, refetch: refetchVet, isLoading: vetLoading } = useListVeterinaryRecords(id ?? "", { query: { enabled: !!id } });
   const { mutate: deleteVetRecord, isPending: isDeletingVet } = useDeleteVeterinaryRecord();
+  const { mutate: deleteDailyRecord, isPending: isDeletingDaily } = useDeleteDailyRecord();
+
+  const handleDeleteDailyRecord = (recordId: string) => {
+    deleteDailyRecord(
+      { batchId: id ?? "", recordId },
+      {
+        onSuccess: () => { toast.success("Relevé journalier supprimé"); setDeletingDailyId(null); refetchDaily(); refetchBatch(); },
+        onError: () => { toast.error("Erreur lors de la suppression"); setDeletingDailyId(null); },
+      }
+    );
+  };
 
   const handleDeleteVetRecord = (recordId: string) => {
     deleteVetRecord(
@@ -578,22 +697,51 @@ export default function BatchDetail() {
                     <th className="px-5 py-3 font-semibold">Poids moy.</th>
                     <th className="px-5 py-3 font-semibold">Temp. (°C)</th>
                     <th className="px-5 py-3 font-semibold">Notes</th>
+                    <th className="px-5 py-3 font-semibold"></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {dailyRecords?.data.map((r) => (
-                    <tr key={r.id} className="hover:bg-slate-50/50 text-sm">
-                      <td className="px-5 py-3 font-medium text-slate-900">{format(new Date(r.date), "dd MMM yyyy", { locale: fr })}</td>
-                      <td className="px-5 py-3">
-                        <span className={`font-bold ${r.mortality > 0 ? "text-red-600" : "text-slate-400"}`}>{r.mortality}</span>
-                      </td>
-                      <td className="px-5 py-3 text-slate-600">{r.feedConsumption} kg</td>
-                      <td className="px-5 py-3 text-slate-600">{r.waterConsumption} L</td>
-                      <td className="px-5 py-3 text-slate-600">{r.eggsCollected ?? "—"}</td>
-                      <td className="px-5 py-3 text-slate-600">{r.averageWeight ? `${r.averageWeight} kg` : "—"}</td>
-                      <td className="px-5 py-3 text-slate-600">{r.temperature ? `${r.temperature}°C` : "—"}</td>
-                      <td className="px-5 py-3 text-slate-400 text-xs max-w-xs truncate">{r.notes || "—"}</td>
-                    </tr>
+                    <React.Fragment key={r.id}>
+                      {deletingDailyId === r.id ? (
+                        <tr>
+                          <td colSpan={9} className="px-5 py-3">
+                            <div className="flex items-center justify-between bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+                              <p className="text-sm font-medium text-red-700">Confirmer la suppression de ce relevé ?</p>
+                              <div className="flex gap-2">
+                                <button onClick={() => setDeletingDailyId(null)} className="text-xs px-3 py-1.5 border border-slate-200 rounded-lg bg-white text-slate-700 hover:bg-slate-50">Annuler</button>
+                                <button onClick={() => handleDeleteDailyRecord(r.id)} disabled={isDeletingDaily} className="text-xs px-3 py-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50">
+                                  {isDeletingDaily ? "..." : "Supprimer"}
+                                </button>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      ) : (
+                        <tr className="hover:bg-slate-50/50 text-sm">
+                          <td className="px-5 py-3 font-medium text-slate-900">{format(new Date(r.date), "dd MMM yyyy", { locale: fr })}</td>
+                          <td className="px-5 py-3">
+                            <span className={`font-bold ${r.mortality > 0 ? "text-red-600" : "text-slate-400"}`}>{r.mortality}</span>
+                          </td>
+                          <td className="px-5 py-3 text-slate-600">{r.feedConsumption > 0 ? `${r.feedConsumption} kg` : "—"}</td>
+                          <td className="px-5 py-3 text-slate-600">{r.waterConsumption > 0 ? `${r.waterConsumption} L` : "—"}</td>
+                          <td className="px-5 py-3 text-slate-600">{r.eggsCollected != null ? r.eggsCollected : "—"}</td>
+                          <td className="px-5 py-3 text-slate-600">{r.averageWeight ? `${r.averageWeight} kg` : "—"}</td>
+                          <td className="px-5 py-3 text-slate-600">{r.temperature ? `${r.temperature}°C` : "—"}</td>
+                          <td className="px-5 py-3 text-slate-400 text-xs max-w-xs truncate">{r.notes || "—"}</td>
+                          <td className="px-5 py-3">
+                            <div className="flex items-center gap-1">
+                              <button onClick={() => setEditingDailyRecord(r)} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Modifier">
+                                <Pencil className="w-3.5 h-3.5" />
+                              </button>
+                              <button onClick={() => setDeletingDailyId(r.id)} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Supprimer">
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
                   ))}
                 </tbody>
               </table>
@@ -675,6 +823,14 @@ export default function BatchDetail() {
 
       {isDailyModalOpen && <AddDailyRecordModal batchId={id ?? ""} onClose={() => setIsDailyModalOpen(false)} onSuccess={handleRefreshAll} />}
       {isMortalityModalOpen && <QuickMortalityModal batchId={id ?? ""} onClose={() => setIsMortalityModalOpen(false)} onSuccess={handleRefreshAll} />}
+      {editingDailyRecord && (
+        <EditDailyRecordModal
+          batchId={id ?? ""}
+          record={editingDailyRecord}
+          onClose={() => setEditingDailyRecord(null)}
+          onSuccess={() => { refetchDaily(); refetchBatch(); }}
+        />
+      )}
       {isVetModalOpen && <AddVetRecordModal batchId={id ?? ""} onClose={() => setIsVetModalOpen(false)} onSuccess={() => { refetchVet(); refetchBatch(); }} />}
       {isTerminateModalOpen && batch && (
         <TerminateBatchModal

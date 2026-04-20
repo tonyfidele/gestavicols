@@ -23,6 +23,9 @@ import {
   ListDailyRecordsResponse,
   CreateDailyRecordParams,
   CreateDailyRecordBody,
+  UpdateDailyRecordParams,
+  UpdateDailyRecordBody,
+  DeleteDailyRecordParams,
   ListVeterinaryRecordsParams,
   ListVeterinaryRecordsResponse,
   CreateVeterinaryRecordParams,
@@ -333,6 +336,53 @@ router.post(
     await logAudit(user, "CREATE_DAILY_RECORD", "DAILY_RECORD", record.id);
 
     res.status(201).json({ ...record, recordedBy: user.name });
+  }
+);
+
+router.put(
+  "/batches/:batchId/daily-records/:recordId",
+  requireAuth,
+  requirePermission("DAILY_RECORD", "UPDATE"),
+  async (req, res): Promise<void> => {
+    const params = UpdateDailyRecordParams.safeParse(req.params);
+    if (!params.success) { res.status(400).json({ message: params.error.message }); return; }
+    const parsed = UpdateDailyRecordBody.safeParse(req.body);
+    if (!parsed.success) { res.status(400).json({ message: parsed.error.message }); return; }
+
+    const user = req.user!;
+    const conds = [eq(dailyRecordsTable.id, params.data.recordId)];
+    if (user.role !== "SUPER_ADMIN") conds.push(eq(dailyRecordsTable.tenantId, user.tenantId));
+    const [existing] = await db.select().from(dailyRecordsTable).where(and(...conds));
+    if (!existing) { res.status(404).json({ message: "Daily record not found" }); return; }
+
+    const [updated] = await db
+      .update(dailyRecordsTable)
+      .set({ ...parsed.data })
+      .where(and(...conds))
+      .returning();
+
+    await logAudit(user, "UPDATE_DAILY_RECORD", "DAILY_RECORD", updated.id);
+    res.json({ ...updated, recordedBy: user.name });
+  }
+);
+
+router.delete(
+  "/batches/:batchId/daily-records/:recordId",
+  requireAuth,
+  requirePermission("DAILY_RECORD", "DELETE"),
+  async (req, res): Promise<void> => {
+    const params = DeleteDailyRecordParams.safeParse(req.params);
+    if (!params.success) { res.status(400).json({ message: params.error.message }); return; }
+
+    const user = req.user!;
+    const conds = [eq(dailyRecordsTable.id, params.data.recordId)];
+    if (user.role !== "SUPER_ADMIN") conds.push(eq(dailyRecordsTable.tenantId, user.tenantId));
+    const [existing] = await db.select().from(dailyRecordsTable).where(and(...conds));
+    if (!existing) { res.status(404).json({ message: "Daily record not found" }); return; }
+
+    await db.delete(dailyRecordsTable).where(and(...conds));
+    await logAudit(user, "DELETE_DAILY_RECORD", "DAILY_RECORD", params.data.recordId);
+    res.json({ message: "Daily record deleted" });
   }
 );
 
