@@ -133,47 +133,63 @@ router.post("/auth/register", async (req, res): Promise<void> => {
 
   const { farmName, adminName, email, password } = parsed.data;
 
-  const [existing] = await db.select({ id: usersTable.id }).from(usersTable).where(eq(usersTable.email, email));
-  if (existing) {
-    res.status(409).json({ message: "Un compte avec cet email existe déjà" });
-    return;
-  }
+  try {
+    const [existing] = await db.select({ id: usersTable.id }).from(usersTable).where(eq(usersTable.email, email));
+    if (existing) {
+      res.status(409).json({ message: "Un compte avec cet email existe déjà" });
+      return;
+    }
 
-  const tenantId = randomUUID();
-  const userId = randomUUID();
-  const passwordHash = await bcrypt.hash(password, 12);
+    const tenantId = randomUUID();
+    const userId = randomUUID();
+    const passwordHash = await bcrypt.hash(password, 12);
 
-  await db.insert(tenantsTable).values({
-    id: tenantId,
-    name: farmName,
-  });
+    // Générer un slug unique à partir du nom de la ferme
+    const baseSlug = farmName
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .substring(0, 40);
+    const slug = `${baseSlug}-${tenantId.substring(0, 8)}`;
 
-  await db.insert(usersTable).values({
-    id: userId,
-    tenantId,
-    name: adminName,
-    email,
-    passwordHash,
-    role: "ADMIN",
-    isActive: true,
-  });
+    await db.insert(tenantsTable).values({
+      id: tenantId,
+      name: farmName,
+      slug,
+    });
 
-  const authUser = { userId, tenantId, role: "ADMIN" as const, email, name: adminName };
-  const token = generateToken(authUser);
-  const permissions = getPermissionsForRole("ADMIN");
-
-  res.status(201).json({
-    token,
-    user: {
+    await db.insert(usersTable).values({
       id: userId,
-      email,
-      name: adminName,
-      role: "ADMIN",
       tenantId,
-      tenantName: farmName,
-      permissions,
-    },
-  });
+      name: adminName,
+      email,
+      passwordHash,
+      role: "ADMIN",
+      isActive: true,
+    });
+
+    const authUser = { userId, tenantId, role: "ADMIN" as const, email, name: adminName };
+    const token = generateToken(authUser);
+    const permissions = getPermissionsForRole("ADMIN");
+
+    res.status(201).json({
+      token,
+      user: {
+        id: userId,
+        email,
+        name: adminName,
+        role: "ADMIN",
+        tenantId,
+        tenantName: farmName,
+        permissions,
+      },
+    });
+  } catch (err) {
+    console.error("Erreur lors de l'inscription:", err);
+    res.status(500).json({ message: "Erreur lors de la création du compte. Veuillez réessayer." });
+  }
 });
 
 router.post("/auth/logout", requireAuth, async (_req, res): Promise<void> => {
