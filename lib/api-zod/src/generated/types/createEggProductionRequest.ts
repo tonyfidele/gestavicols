@@ -15,5 +15,7 @@ export interface CreateEggProductionRequest {
   soldEggs?: number;
   stockEggs?: number;
   cratesCount?: number;
+  unitPrice?: number;
+  caisseAmount?: number;
   notes?: string;
 }

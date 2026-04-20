@@ -15,7 +15,9 @@ const CreateEggProductionBody = z.object({
   brokenEggs: z.number().int().min(0).default(0),
   soldEggs: z.number().int().min(0).default(0),
   stockEggs: z.number().int().min(0).default(0),
-  cratesCount: z.number().int().min(0).default(0),
+  cratesCount: z.number().min(0).default(0),
+  unitPrice: z.number().min(0).default(0),
+  caisseAmount: z.number().min(0).default(0),
   notes: z.string().optional(),
 });
 
@@ -56,6 +58,8 @@ router.get(
         soldEggs: eggProductionsTable.soldEggs,
         stockEggs: eggProductionsTable.stockEggs,
         cratesCount: eggProductionsTable.cratesCount,
+        unitPrice: eggProductionsTable.unitPrice,
+        caisseAmount: eggProductionsTable.caisseAmount,
         notes: eggProductionsTable.notes,
         createdAt: eggProductionsTable.createdAt,
       })

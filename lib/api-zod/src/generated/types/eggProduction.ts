@@ -16,6 +16,8 @@ export interface EggProduction {
   soldEggs: number;
   stockEggs: number;
   cratesCount: number;
+  unitPrice: number;
+  caisseAmount: number;
   notes?: string;
   createdAt?: Date;
 }
