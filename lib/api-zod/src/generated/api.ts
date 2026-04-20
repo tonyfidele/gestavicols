@@ -1059,6 +1059,51 @@ export const DeleteStockItemResponse = zod.object({
 });
 
 /**
+ * @summary Create a stock movement (ENTREE or SORTIE)
+ */
+export const CreateStockMovementBody = zod.object({
+  stockItemId: zod.string(),
+  batchId: zod.string().optional(),
+  farmId: zod.string().optional(),
+  type: zod.enum(["ENTREE", "SORTIE"]),
+  quantity: zod.number().positive(),
+  movementDate: zod.string(),
+  reference: zod.string().optional(),
+  notes: zod.string().optional(),
+});
+
+export const StockMovementItem = zod.object({
+  id: zod.string(),
+  stockItemId: zod.string(),
+  stockItemName: zod.string(),
+  batchId: zod.string().nullish(),
+  batchName: zod.string().nullish(),
+  farmId: zod.string().nullish(),
+  tenantId: zod.string(),
+  type: zod.enum(["ENTREE", "SORTIE"]),
+  quantity: zod.number(),
+  unitPrice: zod.number().nullish(),
+  movementDate: zod.string(),
+  reference: zod.string().nullish(),
+  notes: zod.string().nullish(),
+  createdAt: zod.coerce.date(),
+});
+
+export const ListStockMovementsQueryParams = zod.object({
+  stockItemId: zod.string().optional(),
+  batchId: zod.string().optional(),
+  page: zod.coerce.number().default(1),
+  limit: zod.coerce.number().default(50),
+});
+
+export const ListStockMovementsResponse = zod.object({
+  data: zod.array(StockMovementItem),
+  total: zod.number(),
+  page: zod.number(),
+  limit: zod.number(),
+});
+
+/**
  * @summary Update an expense
  */
 export const UpdateExpenseParams = zod.object({

@@ -1,12 +1,15 @@
 import { Router, type IRouter } from "express";
 import { randomUUID } from "crypto";
-import { eq, and, isNull, count, lt } from "drizzle-orm";
+import { eq, and, isNull, count, lt, desc } from "drizzle-orm";
 import { db } from "@workspace/db";
-import { stockTable } from "@workspace/db";
+import { stockTable, stockMovementsTable, batchesTable } from "@workspace/db";
 import {
   ListStockQueryParams,
   ListStockResponse,
   CreateStockItemBody,
+  CreateStockMovementBody,
+  ListStockMovementsQueryParams,
+  ListStockMovementsResponse,
 } from "@workspace/api-zod";
 import { requireAuth, requirePermission } from "../middlewares/auth";
 import { logAudit } from "../lib/audit";
@@ -120,6 +123,120 @@ router.delete(
     if (!deleted) { res.status(404).json({ message: "Article introuvable" }); return; }
     await logAudit(user, "DELETE_STOCK", "STOCK", deleted.id);
     res.json({ message: "Article supprimé" });
+  }
+);
+
+// ─── Stock Movements ────────────────────────────────────────────────────────
+
+router.get(
+  "/stock-movements",
+  requireAuth,
+  requirePermission("STOCK", "READ"),
+  async (req, res): Promise<void> => {
+    const query = ListStockMovementsQueryParams.safeParse(req.query);
+    if (!query.success) { res.status(400).json({ message: query.error.message }); return; }
+    const user = req.user!;
+    const { stockItemId, batchId, page, limit } = query.data;
+    const offset = (page - 1) * limit;
+
+    const conditions = [eq(stockMovementsTable.tenantId, user.tenantId)];
+    if (user.role !== "SUPER_ADMIN") conditions.push(eq(stockMovementsTable.tenantId, user.tenantId));
+    if (stockItemId) conditions.push(eq(stockMovementsTable.stockItemId, stockItemId));
+    if (batchId) conditions.push(eq(stockMovementsTable.batchId, batchId));
+
+    const [totalResult] = await db
+      .select({ count: count() })
+      .from(stockMovementsTable)
+      .where(and(...conditions));
+
+    const rows = await db
+      .select({
+        id: stockMovementsTable.id,
+        stockItemId: stockMovementsTable.stockItemId,
+        stockItemName: stockTable.name,
+        batchId: stockMovementsTable.batchId,
+        batchName: batchesTable.name,
+        farmId: stockMovementsTable.farmId,
+        tenantId: stockMovementsTable.tenantId,
+        type: stockMovementsTable.type,
+        quantity: stockMovementsTable.quantity,
+        unitPrice: stockMovementsTable.unitPrice,
+        movementDate: stockMovementsTable.movementDate,
+        reference: stockMovementsTable.reference,
+        notes: stockMovementsTable.notes,
+        createdAt: stockMovementsTable.createdAt,
+      })
+      .from(stockMovementsTable)
+      .leftJoin(stockTable, eq(stockMovementsTable.stockItemId, stockTable.id))
+      .leftJoin(batchesTable, eq(stockMovementsTable.batchId, batchesTable.id))
+      .where(and(...conditions))
+      .orderBy(desc(stockMovementsTable.movementDate))
+      .limit(limit)
+      .offset(offset);
+
+    res.json(ListStockMovementsResponse.parse({
+      data: rows,
+      total: totalResult?.count ?? 0,
+      page,
+      limit,
+    }));
+  }
+);
+
+router.post(
+  "/stock-movements",
+  requireAuth,
+  requirePermission("STOCK", "CREATE"),
+  async (req, res): Promise<void> => {
+    const parsed = CreateStockMovementBody.safeParse(req.body);
+    if (!parsed.success) { res.status(400).json({ message: parsed.error.message }); return; }
+
+    const user = req.user!;
+    const { stockItemId, batchId, farmId, type, quantity, movementDate, reference, notes } = parsed.data;
+
+    const stockConds = [eq(stockTable.id, stockItemId), isNull(stockTable.deletedAt)];
+    if (user.role !== "SUPER_ADMIN") stockConds.push(eq(stockTable.tenantId, user.tenantId));
+    const [stockItem] = await db.select().from(stockTable).where(and(...stockConds));
+    if (!stockItem) { res.status(404).json({ message: "Article de stock introuvable" }); return; }
+
+    if (type === "SORTIE" && stockItem.quantity < quantity) {
+      res.status(400).json({ message: `Stock insuffisant. Disponible : ${stockItem.quantity} ${stockItem.unit}` });
+      return;
+    }
+
+    const newQty = type === "SORTIE"
+      ? Math.max(0, stockItem.quantity - quantity)
+      : stockItem.quantity + quantity;
+
+    const [movement] = await db
+      .insert(stockMovementsTable)
+      .values({
+        id: randomUUID(),
+        stockItemId,
+        batchId: batchId ?? null,
+        farmId: farmId ?? null,
+        tenantId: user.tenantId,
+        type,
+        quantity,
+        unitPrice: stockItem.unitPrice,
+        movementDate,
+        reference: reference ?? null,
+        notes: notes ?? null,
+      })
+      .returning();
+
+    await db.update(stockTable).set({ quantity: newQty }).where(eq(stockTable.id, stockItemId));
+
+    const isLowStock = newQty < stockItem.minimumLevel;
+    await logAudit(user, "CREATE_STOCK_MOVEMENT", "STOCK", movement.id, `${type} ${quantity} ${stockItem.unit} de ${stockItem.name}`);
+
+    res.status(201).json({
+      ...movement,
+      stockItemName: stockItem.name,
+      newQuantity: newQty,
+      isLowStock,
+      batchName: null,
+    });
   }
 );
 

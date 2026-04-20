@@ -279,6 +279,41 @@ export interface StockListResponse {
   lowStockCount: number;
 }
 
+export interface StockMovement {
+  id: string;
+  stockItemId: string;
+  stockItemName: string;
+  batchId?: string | null;
+  batchName?: string | null;
+  farmId?: string | null;
+  tenantId: string;
+  type: "ENTREE" | "SORTIE";
+  quantity: number;
+  unitPrice?: number | null;
+  movementDate: string;
+  reference?: string | null;
+  notes?: string | null;
+  createdAt: string;
+}
+
+export interface CreateStockMovementRequest {
+  stockItemId: string;
+  batchId?: string;
+  farmId?: string;
+  type: "ENTREE" | "SORTIE";
+  quantity: number;
+  movementDate: string;
+  reference?: string;
+  notes?: string;
+}
+
+export interface StockMovementListResponse {
+  data: StockMovement[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
 export interface Expense {
   id: string;
   category: string;

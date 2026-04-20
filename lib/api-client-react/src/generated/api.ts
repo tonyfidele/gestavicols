@@ -4171,6 +4171,69 @@ export const useDeleteStockItem = <
   return useMutation(getDeleteStockItemMutationOptions(options));
 };
 
+// ─── Stock Movements ────────────────────────────────────────────────────────
+
+export const getListStockMovementsUrl = (params?: Record<string, string | number>) => {
+  const query = params ? "?" + new URLSearchParams(params as Record<string, string>).toString() : "";
+  return `/api/stock-movements${query}`;
+};
+
+export const listStockMovements = async (
+  params?: { stockItemId?: string; batchId?: string; page?: number; limit?: number },
+  options?: RequestInit,
+): Promise<import("./api.schemas").StockMovementListResponse> => {
+  return customFetch<import("./api.schemas").StockMovementListResponse>(
+    getListStockMovementsUrl(params as Record<string, string | number>),
+    { ...options, method: "GET" },
+  );
+};
+
+export const useListStockMovements = <TData = Awaited<ReturnType<typeof listStockMovements>>, TError = ErrorType<unknown>>(
+  params?: { stockItemId?: string; batchId?: string; page?: number; limit?: number },
+  options?: { query?: UseQueryOptions<Awaited<ReturnType<typeof listStockMovements>>, TError, TData>; request?: SecondParameter<typeof customFetch> },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+  const queryKey = queryOptions?.queryKey ?? ["listStockMovements", params];
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listStockMovements>>> = () =>
+    listStockMovements(params, requestOptions);
+  const query = useQuery({ queryKey, queryFn, ...queryOptions }) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
+  query.queryKey = queryKey;
+  return query;
+};
+
+export const getCreateStockMovementUrl = () => `/api/stock-movements`;
+
+export const createStockMovement = async (
+  data: import("./api.schemas").CreateStockMovementRequest,
+  options?: RequestInit,
+): Promise<import("./api.schemas").StockMovement & { newQuantity: number; isLowStock: boolean }> => {
+  return customFetch<import("./api.schemas").StockMovement & { newQuantity: number; isLowStock: boolean }>(
+    getCreateStockMovementUrl(),
+    { ...options, method: "POST", headers: { "Content-Type": "application/json", ...options?.headers }, body: JSON.stringify(data) },
+  );
+};
+
+export const useCreateStockMovement = <TError = ErrorType<unknown>, TContext = unknown>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createStockMovement>>,
+    TError,
+    { data: import("./api.schemas").CreateStockMovementRequest },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createStockMovement>>,
+  TError,
+  { data: import("./api.schemas").CreateStockMovementRequest },
+  TContext
+> => {
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createStockMovement>>,
+    { data: import("./api.schemas").CreateStockMovementRequest }
+  > = ({ data }) => createStockMovement(data, options?.request);
+  return useMutation({ mutationFn, ...options?.mutation });
+};
+
 /**
  * @summary Update an expense
  */

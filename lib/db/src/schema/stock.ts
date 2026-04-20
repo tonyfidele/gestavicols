@@ -3,6 +3,7 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { tenantsTable } from "./tenants";
 import { farmsTable } from "./farms";
+import { batchesTable } from "./batches";
 
 export const stockCategoryEnum = pgEnum("stock_category", ["ALIMENTS", "MEDICAMENTS", "MATERIEL", "LITIERE", "EQUIPEMENT", "AUTRE"]);
 export const stockMovementTypeEnum = pgEnum("stock_movement_type", ["ENTREE", "SORTIE"]);
@@ -24,6 +25,7 @@ export const stockTable = pgTable("stock", {
 export const stockMovementsTable = pgTable("stock_movements", {
   id: text("id").primaryKey(),
   stockItemId: text("stock_item_id").notNull().references(() => stockTable.id),
+  batchId: text("batch_id").references(() => batchesTable.id),
   farmId: text("farm_id").references(() => farmsTable.id),
   tenantId: text("tenant_id").notNull().references(() => tenantsTable.id),
   type: stockMovementTypeEnum("type").notNull(),
