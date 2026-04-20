@@ -4,7 +4,9 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/lib/auth-context";
 
+import Landing from "./pages/landing";
 import Login from "./pages/login";
+import Register from "./pages/register";
 import Dashboard from "./pages/dashboard";
 import Farms from "./pages/farms/index";
 import FarmDetail from "./pages/farms/[id]";
@@ -22,6 +24,8 @@ import Veterinary from "./pages/veterinary/index";
 import Eggs from "./pages/eggs/index";
 import NotFound from "./pages/not-found";
 
+const PUBLIC_PATHS = ["/", "/login", "/register"];
+
 const originalFetch = window.fetch;
 window.fetch = async (input, init) => {
   const token = localStorage.getItem("auth_token");
@@ -34,9 +38,13 @@ window.fetch = async (input, init) => {
     init.headers = headers;
   }
   const response = await originalFetch(input, init);
-  if (response.status === 401 && !window.location.pathname.endsWith("/login")) {
-    localStorage.removeItem("auth_token");
-    window.location.href = "/login";
+  if (response.status === 401) {
+    const path = window.location.pathname;
+    const isPublic = PUBLIC_PATHS.some(p => path.endsWith(p));
+    if (!isPublic) {
+      localStorage.removeItem("auth_token");
+      window.location.href = "/login";
+    }
   }
   return response;
 };
@@ -50,8 +58,10 @@ const queryClient = new QueryClient({
 function Router() {
   return (
     <Switch>
+      <Route path="/" component={Landing} />
       <Route path="/login" component={Login} />
-      <Route path="/" component={Dashboard} />
+      <Route path="/register" component={Register} />
+      <Route path="/dashboard" component={Dashboard} />
       <Route path="/farms" component={Farms} />
       <Route path="/farms/:id" component={FarmDetail} />
       <Route path="/batches" component={Batches} />

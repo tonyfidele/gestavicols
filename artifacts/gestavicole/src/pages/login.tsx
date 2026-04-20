@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useLogin } from "@workspace/api-client-react";
 import { useAuth } from "@/lib/auth-context";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import { Loader2 } from "lucide-react";
 
 export default function Login() {
@@ -20,7 +20,7 @@ export default function Login() {
     try {
       const response = await loginMutation.mutateAsync({ data: { email, password } });
       login(response.token);
-      setLocation("/");
+      setLocation("/dashboard");
     } catch (err: any) {
       setError(err?.message || "Identifiants invalides");
     }
@@ -89,6 +89,18 @@ export default function Login() {
               )}
             </button>
           </form>
+
+          <p className="text-center text-sm text-slate-500 mt-6">
+            Pas encore de compte ?{" "}
+            <Link href="/register" className="text-emerald-600 hover:text-emerald-700 font-semibold">
+              Créer un compte gratuitement
+            </Link>
+          </p>
+          <p className="text-center mt-3">
+            <Link href="/" className="text-xs text-slate-400 hover:text-slate-600 transition-colors">
+              ← Retour à l'accueil
+            </Link>
+          </p>
         </div>
       </div>
 

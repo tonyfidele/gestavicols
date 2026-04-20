@@ -33,7 +33,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     {
       label: "Exploitation",
       items: [
-        { name: "Dashboard", href: "/", icon: LayoutDashboard, roles: ["SUPER_ADMIN", "ADMIN", "CHEF_FERME", "COMPTABLE"] },
+        { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, roles: ["SUPER_ADMIN", "ADMIN", "CHEF_FERME", "COMPTABLE"] },
         { name: "Fermes", href: "/farms", icon: Tractor, roles: ["SUPER_ADMIN", "ADMIN", "CHEF_FERME"] },
         { name: "Lots (Bandes)", href: "/batches", icon: Layers, roles: ["SUPER_ADMIN", "ADMIN", "CHEF_FERME", "OUVRIER", "VETERINAIRE"] },
       ],

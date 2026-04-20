@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import { randomUUID } from "crypto";
 import bcrypt from "bcryptjs";
+import { z } from "zod";
 import { eq, and, isNull } from "drizzle-orm";
 import { db } from "@workspace/db";
 import { usersTable, tenantsTable } from "@workspace/db";
@@ -114,6 +115,65 @@ router.get("/auth/me", requireAuth, async (req, res): Promise<void> => {
       permissions,
     })
   );
+});
+
+router.post("/auth/register", async (req, res): Promise<void> => {
+  const RegisterBody = z.object({
+    farmName: z.string().min(2, "Nom de la ferme requis"),
+    adminName: z.string().min(2, "Votre nom est requis"),
+    email: z.string().email("Email invalide"),
+    password: z.string().min(6, "Mot de passe minimum 6 caractères"),
+  });
+
+  const parsed = RegisterBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ message: parsed.error.errors[0]?.message || "Données invalides" });
+    return;
+  }
+
+  const { farmName, adminName, email, password } = parsed.data;
+
+  const [existing] = await db.select({ id: usersTable.id }).from(usersTable).where(eq(usersTable.email, email));
+  if (existing) {
+    res.status(409).json({ message: "Un compte avec cet email existe déjà" });
+    return;
+  }
+
+  const tenantId = randomUUID();
+  const userId = randomUUID();
+  const passwordHash = await bcrypt.hash(password, 12);
+
+  await db.insert(tenantsTable).values({
+    id: tenantId,
+    name: farmName,
+  });
+
+  await db.insert(usersTable).values({
+    id: userId,
+    tenantId,
+    name: adminName,
+    email,
+    passwordHash,
+    role: "ADMIN",
+    isActive: true,
+  });
+
+  const authUser = { userId, tenantId, role: "ADMIN" as const, email, name: adminName };
+  const token = generateToken(authUser);
+  const permissions = getPermissionsForRole("ADMIN");
+
+  res.status(201).json({
+    token,
+    user: {
+      id: userId,
+      email,
+      name: adminName,
+      role: "ADMIN",
+      tenantId,
+      tenantName: farmName,
+      permissions,
+    },
+  });
 });
 
 router.post("/auth/logout", requireAuth, async (_req, res): Promise<void> => {
