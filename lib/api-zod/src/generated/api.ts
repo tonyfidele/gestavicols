@@ -552,6 +552,8 @@ export const ListSalesResponse = zod.object({
       id: zod.string(),
       batchId: zod.string().nullish(),
       batchName: zod.string().nullish(),
+      customerId: zod.string().nullish(),
+      customerName: zod.string().nullish(),
       quantity: zod.number(),
       unitPrice: zod.number(),
       totalAmount: zod.number(),
@@ -574,6 +576,7 @@ export const ListSalesResponse = zod.object({
  */
 export const CreateSaleBody = zod.object({
   batchId: zod.string().optional(),
+  customerId: zod.string().optional(),
   quantity: zod.number(),
   unitPrice: zod.number(),
   buyerName: zod.string(),

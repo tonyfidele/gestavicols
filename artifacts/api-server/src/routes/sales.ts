@@ -2,7 +2,7 @@ import { Router, type IRouter } from "express";
 import { randomUUID } from "crypto";
 import { eq, and, isNull, count, sum } from "drizzle-orm";
 import { db } from "@workspace/db";
-import { salesTable, batchesTable } from "@workspace/db";
+import { salesTable, batchesTable, customersTable } from "@workspace/db";
 import {
   ListSalesQueryParams,
   ListSalesResponse,
@@ -44,6 +44,8 @@ router.get(
         id: salesTable.id,
         batchId: salesTable.batchId,
         batchName: batchesTable.name,
+        customerId: salesTable.customerId,
+        customerName: customersTable.name,
         tenantId: salesTable.tenantId,
         quantity: salesTable.quantity,
         unitPrice: salesTable.unitPrice,
@@ -56,6 +58,7 @@ router.get(
       })
       .from(salesTable)
       .leftJoin(batchesTable, eq(salesTable.batchId, batchesTable.id))
+      .leftJoin(customersTable, eq(salesTable.customerId, customersTable.id))
       .where(and(...conditions))
       .limit(limit)
       .offset(offset);

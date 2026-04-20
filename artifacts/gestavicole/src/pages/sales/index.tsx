@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { AppLayout } from "@/components/layout/app-layout";
-import { useListSales, useCreateSale, useUpdateSale, useDeleteSale, useListBatches } from "@workspace/api-client-react";
-import { Plus, Loader2, Pencil, Trash2 } from "lucide-react";
+import { useListSales, useCreateSale, useUpdateSale, useDeleteSale, useListBatches, useListCustomers } from "@workspace/api-client-react";
+import { Plus, Loader2, Pencil, Trash2, UserCheck } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { formatCurrency } from "@/lib/utils";
@@ -13,6 +13,8 @@ type Sale = {
   id: string;
   batchId?: string;
   batchName?: string;
+  customerId?: string;
+  customerName?: string;
   buyerName: string;
   quantity: number;
   unitPrice: number;
@@ -22,7 +24,7 @@ type Sale = {
 };
 
 const EMPTY_FORM = {
-  batchId: "", quantity: "", unitPrice: "", buyerName: "",
+  customerId: "", batchId: "", quantity: "", unitPrice: "", buyerName: "",
   saleDate: format(new Date(), "yyyy-MM-dd"), type: "ANIMAUX",
 };
 
@@ -49,7 +51,7 @@ export default function Sales() {
 
   const COLS = [
     { header: "Date", key: "date", width: 15 },
-    { header: "Acheteur", key: "buyerName", width: 25 },
+    { header: "Client / Acheteur", key: "buyerName", width: 25 },
     { header: "Lot", key: "batchName", width: 20 },
     { header: "Type", key: "type", width: 12 },
     { header: "Quantité", key: "quantity", width: 12 },
@@ -109,7 +111,7 @@ export default function Sales() {
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 text-sm uppercase tracking-wider">
                   <th className="px-6 py-4 font-semibold">Date</th>
-                  <th className="px-6 py-4 font-semibold">Acheteur</th>
+                  <th className="px-6 py-4 font-semibold">Client / Acheteur</th>
                   <th className="px-6 py-4 font-semibold">Lot</th>
                   <th className="px-6 py-4 font-semibold">Qté</th>
                   <th className="px-6 py-4 font-semibold">Prix Unitaire</th>
@@ -123,7 +125,19 @@ export default function Sales() {
                     <td className="px-6 py-4 font-medium text-slate-900">
                       {format(new Date(sale.saleDate), "dd MMM yyyy", { locale: fr })}
                     </td>
-                    <td className="px-6 py-4 text-slate-700">{sale.buyerName}</td>
+                    <td className="px-6 py-4">
+                      <div className="text-slate-700 font-medium">{sale.buyerName}</div>
+                      {sale.customerName && sale.customerName !== sale.buyerName && (
+                        <div className="text-xs text-emerald-600 flex items-center gap-1 mt-0.5">
+                          <UserCheck className="w-3 h-3" /> {sale.customerName}
+                        </div>
+                      )}
+                      {sale.customerId && (
+                        <div className="text-xs text-emerald-600 flex items-center gap-1 mt-0.5">
+                          <UserCheck className="w-3 h-3" /> Client enregistré
+                        </div>
+                      )}
+                    </td>
                     <td className="px-6 py-4 text-slate-600">{sale.batchName || "—"}</td>
                     <td className="px-6 py-4 text-slate-600">{sale.quantity.toLocaleString()}</td>
                     <td className="px-6 py-4 text-slate-600">{formatCurrency(sale.unitPrice)}</td>
@@ -188,6 +202,7 @@ function SaleModal({ sale, onClose, onSuccess }: { sale: Sale | null; onClose: (
   const [formData, setFormData] = useState(
     sale
       ? {
+          customerId: sale.customerId || "",
           batchId: sale.batchId || "",
           quantity: String(sale.quantity),
           unitPrice: String(sale.unitPrice),
@@ -200,11 +215,26 @@ function SaleModal({ sale, onClose, onSuccess }: { sale: Sale | null; onClose: (
   const createMutation = useCreateSale();
   const updateMutation = useUpdateSale();
   const { data: batches } = useListBatches({ limit: 100 });
+  const { data: customersData } = useListCustomers({ limit: 200 });
+
+  const customers = customersData?.data ?? [];
+
+  const handleCustomerSelect = (customerId: string) => {
+    if (!customerId) {
+      setFormData({ ...formData, customerId: "", buyerName: "" });
+      return;
+    }
+    const customer = customers.find((c) => c.id === customerId);
+    if (customer) {
+      setFormData({ ...formData, customerId, buyerName: customer.name });
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const payload = {
       batchId: formData.batchId || undefined,
+      customerId: formData.customerId || undefined,
       quantity: parseInt(formData.quantity, 10),
       unitPrice: parseFloat(formData.unitPrice),
       buyerName: formData.buyerName,
@@ -236,19 +266,65 @@ function SaleModal({ sale, onClose, onSuccess }: { sale: Sale | null; onClose: (
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600 text-2xl leading-none">&times;</button>
         </div>
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
+
+          {/* Sélecteur de client */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Acheteur</label>
-            <input required type="text" value={formData.buyerName} onChange={e => setFormData({ ...formData, buyerName: e.target.value })}
-              className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" />
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              <span className="flex items-center gap-1.5">
+                <UserCheck className="w-4 h-4 text-emerald-600" />
+                Sélectionner un client (optionnel)
+              </span>
+            </label>
+            <select
+              value={formData.customerId}
+              onChange={e => handleCustomerSelect(e.target.value)}
+              className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none bg-white"
+            >
+              <option value="">— Saisir manuellement —</option>
+              {customers.map(c => (
+                <option key={c.id} value={c.id}>
+                  {c.name}{c.phone ? ` · ${c.phone}` : ""}{c.type === "ENTREPRISE" ? " 🏢" : ""}
+                </option>
+              ))}
+            </select>
+            {customers.length === 0 && (
+              <p className="text-xs text-slate-400 mt-1">Aucun client enregistré — créez-en dans l'onglet Clients</p>
+            )}
           </div>
+
+          {/* Nom de l'acheteur */}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              Nom de l'acheteur {!formData.customerId && <span className="text-red-500">*</span>}
+            </label>
+            <input
+              required
+              type="text"
+              value={formData.buyerName}
+              onChange={e => setFormData({ ...formData, buyerName: e.target.value, customerId: formData.customerId })}
+              className={`w-full px-4 py-2.5 rounded-xl border focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-colors ${
+                formData.customerId ? "border-emerald-300 bg-emerald-50/50 text-emerald-800" : "border-slate-200"
+              }`}
+              placeholder="Nom de l'acheteur"
+            />
+            {formData.customerId && (
+              <p className="text-xs text-emerald-600 mt-1 flex items-center gap-1">
+                <UserCheck className="w-3 h-3" /> Rempli depuis la fiche client — vous pouvez modifier
+              </p>
+            )}
+          </div>
+
+          {/* Lot */}
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Lot (Optionnel)</label>
             <select value={formData.batchId} onChange={e => setFormData({ ...formData, batchId: e.target.value })}
-              className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none">
+              className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none bg-white">
               <option value="">Sélectionner un lot</option>
               {batches?.data.map(b => <option key={b.id} value={b.id}>{b.name} ({b.currentCount} dispo)</option>)}
             </select>
           </div>
+
+          {/* Quantité et Prix */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Quantité</label>
@@ -261,11 +337,24 @@ function SaleModal({ sale, onClose, onSuccess }: { sale: Sale | null; onClose: (
                 className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" />
             </div>
           </div>
+
+          {/* Total calculé */}
+          {formData.quantity && formData.unitPrice && (
+            <div className="bg-emerald-50 rounded-xl px-4 py-3 flex justify-between items-center">
+              <span className="text-sm text-emerald-700 font-medium">Total estimé</span>
+              <span className="text-lg font-bold text-emerald-800">
+                {formatCurrency(parseFloat(formData.unitPrice || "0") * parseInt(formData.quantity || "0", 10))}
+              </span>
+            </div>
+          )}
+
+          {/* Date */}
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Date</label>
             <input required type="date" value={formData.saleDate} onChange={e => setFormData({ ...formData, saleDate: e.target.value })}
               className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" />
           </div>
+
           <div className="pt-2 flex justify-end gap-3">
             <button type="button" onClick={onClose} className="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-100 font-medium">Annuler</button>
             <button type="submit" disabled={isPending} className="px-6 py-2 rounded-xl bg-primary hover:bg-emerald-600 text-white font-medium disabled:opacity-50">
