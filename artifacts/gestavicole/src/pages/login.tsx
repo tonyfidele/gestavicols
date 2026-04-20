@@ -57,7 +57,11 @@ export default function Login() {
                   type="email"
                   required
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => setEmail(e.target.value.toLowerCase().trim())}
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  autoComplete="email"
+                  inputMode="email"
                   className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all"
                   placeholder="admin@ferme.com"
                 />

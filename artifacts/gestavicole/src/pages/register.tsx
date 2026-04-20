@@ -141,7 +141,11 @@ export default function Register() {
                 required
                 placeholder="vous@exemple.com"
                 value={form.email}
-                onChange={e => setForm({ ...form, email: e.target.value })}
+                onChange={e => setForm({ ...form, email: e.target.value.toLowerCase().trim() })}
+                autoCapitalize="none"
+                autoCorrect="off"
+                autoComplete="email"
+                inputMode="email"
                 className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all text-sm"
               />
             </div>

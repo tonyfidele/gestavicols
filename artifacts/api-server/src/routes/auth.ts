@@ -26,7 +26,8 @@ router.post("/auth/login", async (req, res): Promise<void> => {
     return;
   }
 
-  const { email, password } = parsed.data;
+  const { email: rawEmail, password } = parsed.data;
+  const email = rawEmail.toLowerCase().trim();
 
   const [user] = await db
     .select({
@@ -131,7 +132,8 @@ router.post("/auth/register", async (req, res): Promise<void> => {
     return;
   }
 
-  const { farmName, adminName, email, password } = parsed.data;
+  const { farmName, adminName, email: rawEmail, password } = parsed.data;
+  const email = rawEmail.toLowerCase().trim();
 
   try {
     const [existing] = await db.select({ id: usersTable.id }).from(usersTable).where(eq(usersTable.email, email));
