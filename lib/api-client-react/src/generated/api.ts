@@ -70,6 +70,9 @@ import type {
   SaleListResponse,
   Stock,
   StockListResponse,
+  StockMovement,
+  StockMovementListResponse,
+  CreateStockMovementRequest,
   ToggleUserActiveResponse,
   UpdateBatchRequest,
   UpdateCustomerRequest,
@@ -4181,8 +4184,8 @@ export const getListStockMovementsUrl = (params?: Record<string, string | number
 export const listStockMovements = async (
   params?: { stockItemId?: string; batchId?: string; page?: number; limit?: number },
   options?: RequestInit,
-): Promise<import("./api.schemas").StockMovementListResponse> => {
-  return customFetch<import("./api.schemas").StockMovementListResponse>(
+): Promise<StockMovementListResponse> => {
+  return customFetch<StockMovementListResponse>(
     getListStockMovementsUrl(params as Record<string, string | number>),
     { ...options, method: "GET" },
   );
@@ -4204,10 +4207,10 @@ export const useListStockMovements = <TData = Awaited<ReturnType<typeof listStoc
 export const getCreateStockMovementUrl = () => `/api/stock-movements`;
 
 export const createStockMovement = async (
-  data: import("./api.schemas").CreateStockMovementRequest,
+  data: CreateStockMovementRequest,
   options?: RequestInit,
-): Promise<import("./api.schemas").StockMovement & { newQuantity: number; isLowStock: boolean }> => {
-  return customFetch<import("./api.schemas").StockMovement & { newQuantity: number; isLowStock: boolean }>(
+): Promise<StockMovement & { newQuantity: number; isLowStock: boolean }> => {
+  return customFetch<StockMovement & { newQuantity: number; isLowStock: boolean }>(
     getCreateStockMovementUrl(),
     { ...options, method: "POST", headers: { "Content-Type": "application/json", ...options?.headers }, body: JSON.stringify(data) },
   );
@@ -4217,19 +4220,19 @@ export const useCreateStockMovement = <TError = ErrorType<unknown>, TContext = u
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof createStockMovement>>,
     TError,
-    { data: import("./api.schemas").CreateStockMovementRequest },
+    { data: CreateStockMovementRequest },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationResult<
   Awaited<ReturnType<typeof createStockMovement>>,
   TError,
-  { data: import("./api.schemas").CreateStockMovementRequest },
+  { data: CreateStockMovementRequest },
   TContext
 > => {
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof createStockMovement>>,
-    { data: import("./api.schemas").CreateStockMovementRequest }
+    { data: CreateStockMovementRequest }
   > = ({ data }) => createStockMovement(data, options?.request);
   return useMutation({ mutationFn, ...options?.mutation });
 };

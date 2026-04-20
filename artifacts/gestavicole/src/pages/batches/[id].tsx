@@ -10,9 +10,11 @@ import {
   useCreateVeterinaryRecord,
   useDeleteVeterinaryRecord,
   useUpdateBatch,
+  useListStock,
+  useCreateStockMovement,
   type DailyRecord,
 } from "@workspace/api-client-react";
-import { Loader2, ArrowLeft, Layers, Activity, Egg, Droplets, Thermometer, Plus, Syringe, Pill, Calendar, SkullIcon, XCircle, CheckCircle2, Pencil, Trash2 } from "lucide-react";
+import { Loader2, ArrowLeft, Layers, Activity, Egg, Droplets, Thermometer, Plus, Syringe, Pill, Calendar, SkullIcon, XCircle, CheckCircle2, Pencil, Trash2, ShoppingBag } from "lucide-react";
 import { Link, useParams, useLocation } from "wouter";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -461,6 +463,118 @@ function TerminateBatchModal({ batchId, batchName, onClose, onSuccess }: { batch
   );
 }
 
+function ConsommationAlimentModal({ batchId, batchName, onClose }: { batchId: string; batchName: string; onClose: () => void }) {
+  const [stockItemId, setStockItemId] = useState("");
+  const [quantity, setQuantity] = useState("");
+  const [notes, setNotes] = useState("");
+  const [movementDate, setMovementDate] = useState(new Date().toISOString().split("T")[0]);
+  const { data: stockData } = useListStock({ limit: 100 });
+  const { mutate: createMovement, isPending } = useCreateStockMovement();
+
+  const selectedItem = stockData?.data?.find((s) => s.id === stockItemId);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!stockItemId || !quantity) return;
+    createMovement(
+      { data: { stockItemId, batchId, type: "SORTIE", quantity: parseFloat(quantity), movementDate, notes: notes || undefined } },
+      {
+        onSuccess: (res) => {
+          const msg = res.isLowStock
+            ? `Consommation enregistrée. ⚠️ Stock faible: ${res.newQuantity} ${selectedItem?.unit ?? ""} restants`
+            : `Consommation enregistrée. Stock restant: ${res.newQuantity} ${selectedItem?.unit ?? ""}`;
+          toast.success(msg);
+          onClose();
+        },
+        onError: () => toast.error("Erreur lors de l'enregistrement"),
+      }
+    );
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+        <div className="flex items-center justify-between p-6 border-b">
+          <div>
+            <h2 className="text-lg font-bold text-slate-900">Consommation d'aliment</h2>
+            <p className="text-sm text-slate-500">Bande : {batchName}</p>
+          </div>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100">
+            <XCircle className="w-5 h-5" />
+          </button>
+        </div>
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Article de stock</label>
+            <select
+              value={stockItemId}
+              onChange={(e) => setStockItemId(e.target.value)}
+              required
+              className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white"
+            >
+              <option value="">-- Sélectionner un article --</option>
+              {(stockData?.data ?? []).map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name} ({s.quantity} {s.unit} disponible)
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              Quantité consommée {selectedItem ? `(${selectedItem.unit})` : ""}
+            </label>
+            <input
+              type="number"
+              min="0.01"
+              step="0.01"
+              value={quantity}
+              onChange={(e) => setQuantity(e.target.value)}
+              required
+              placeholder="Ex: 50"
+              className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            />
+            {selectedItem && quantity && parseFloat(quantity) > selectedItem.quantity && (
+              <p className="text-red-500 text-xs mt-1">⚠️ Quantité supérieure au stock disponible</p>
+            )}
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Date</label>
+            <input
+              type="date"
+              value={movementDate}
+              onChange={(e) => setMovementDate(e.target.value)}
+              className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Note (optionnel)</label>
+            <input
+              type="text"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Ex: Alimentation du matin"
+              className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            />
+          </div>
+          <div className="flex gap-3 pt-2">
+            <button type="button" onClick={onClose} className="flex-1 border border-slate-200 text-slate-700 px-4 py-2.5 rounded-xl font-medium hover:bg-slate-50 transition-colors text-sm">
+              Annuler
+            </button>
+            <button
+              type="submit"
+              disabled={isPending || !stockItemId || !quantity}
+              className="flex-1 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2.5 rounded-xl font-medium transition-colors text-sm disabled:opacity-50"
+            >
+              {isPending ? "Enregistrement..." : "Enregistrer"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 export default function BatchDetail() {
   const { id } = useParams<{ id: string }>();
   const [, navigate] = useLocation();
@@ -472,6 +586,7 @@ export default function BatchDetail() {
   const [editingDailyRecord, setEditingDailyRecord] = useState<DailyRecord | null>(null);
   const [deletingDailyId, setDeletingDailyId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"daily" | "vet">("daily");
+  const [isConsomModalOpen, setIsConsomModalOpen] = useState(false);
 
   const {
     data: batchData,
@@ -591,6 +706,12 @@ export default function BatchDetail() {
             )}
             {isActive && (
               <>
+                <button
+                  onClick={() => setIsConsomModalOpen(true)}
+                  className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2.5 rounded-xl font-medium transition-all text-sm"
+                >
+                  <ShoppingBag className="w-4 h-4" /> Consommation aliment
+                </button>
                 <button
                   onClick={() => setIsDailyModalOpen(true)}
                   className="flex items-center gap-2 bg-primary hover:bg-emerald-600 text-white px-4 py-2.5 rounded-xl font-medium shadow-lg shadow-primary/20 transition-all text-sm"
@@ -838,6 +959,13 @@ export default function BatchDetail() {
           batchName={batch.name}
           onClose={() => setIsTerminateModalOpen(false)}
           onSuccess={() => { refetchBatch(); }}
+        />
+      )}
+      {isConsomModalOpen && batch && (
+        <ConsommationAlimentModal
+          batchId={id ?? ""}
+          batchName={batch.name}
+          onClose={() => setIsConsomModalOpen(false)}
         />
       )}
     </AppLayout>
