@@ -83,7 +83,8 @@ router.post(
     }
 
     const user = req.user!;
-    const { email, name, password, role } = parsed.data;
+    const { email: rawEmail, name, password, role } = parsed.data;
+    const email = rawEmail.toLowerCase().trim();
 
     const passwordHash = await bcrypt.hash(password, 12);
 

@@ -2,7 +2,7 @@ import { Router, type IRouter } from "express";
 import { randomUUID } from "crypto";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
-import { eq, and, isNull } from "drizzle-orm";
+import { eq, and, isNull, sql } from "drizzle-orm";
 import { db } from "@workspace/db";
 import { usersTable, tenantsTable } from "@workspace/db";
 import {
@@ -40,7 +40,7 @@ router.post("/auth/login", async (req, res): Promise<void> => {
       isActive: usersTable.isActive,
     })
     .from(usersTable)
-    .where(and(eq(usersTable.email, email), isNull(usersTable.deletedAt)));
+    .where(and(sql`LOWER(${usersTable.email}) = ${email}`, isNull(usersTable.deletedAt)));
 
   if (!user || !user.isActive) {
     res.status(401).json({ message: "Email ou mot de passe incorrect" });
