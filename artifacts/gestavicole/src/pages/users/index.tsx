@@ -75,9 +75,9 @@ export default function Users() {
 
   return (
     <AppLayout>
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex flex-wrap justify-between items-center gap-4 mb-6 lg:mb-8">
         <div>
-          <h1 className="text-3xl font-display font-bold text-slate-900">Utilisateurs</h1>
+          <h1 className="text-xl lg:text-3xl font-display font-bold text-slate-900">Utilisateurs</h1>
           <p className="text-slate-500 mt-1">Gestion des accès et des rôles</p>
         </div>
         <button

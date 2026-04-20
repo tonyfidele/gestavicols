@@ -575,7 +575,7 @@ export default function BatchDetail() {
               <Layers className="w-6 h-6 text-indigo-600" />
             </div>
             <div>
-              <h1 className="text-3xl font-display font-bold text-slate-900">{batch.name}</h1>
+              <h1 className="text-xl lg:text-3xl font-display font-bold text-slate-900">{batch.name}</h1>
               <p className="text-slate-500">{batch.farmName} · {batch.species}</p>
             </div>
             <span className={`px-3 py-1 rounded-full text-xs font-bold border ${statusColor}`}>{statusLabel}</span>

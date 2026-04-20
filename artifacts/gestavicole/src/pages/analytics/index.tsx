@@ -219,7 +219,7 @@ export default function Analytics() {
     <AppLayout>
       <div className="flex justify-between items-center mb-8 flex-wrap gap-4">
         <div>
-          <h1 className="text-3xl font-display font-bold text-slate-900">Analytics & Rapports</h1>
+          <h1 className="text-xl lg:text-3xl font-display font-bold text-slate-900">Analytics & Rapports</h1>
           <p className="text-slate-500 mt-1">Tableau de bord analytique de votre exploitation</p>
         </div>
         <div className="flex items-center gap-3">

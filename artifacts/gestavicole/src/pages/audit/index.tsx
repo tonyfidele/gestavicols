@@ -46,7 +46,7 @@ export default function Audit() {
     <AppLayout>
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-display font-bold text-slate-900">Journal d'audit</h1>
+          <h1 className="text-xl lg:text-xl lg:text-3xl font-display font-bold text-slate-900">Journal d'audit</h1>
           <p className="text-slate-500 mt-1">Historique de toutes les actions sensibles</p>
         </div>
         {(auditData?.total ?? 0) > 0 && (
