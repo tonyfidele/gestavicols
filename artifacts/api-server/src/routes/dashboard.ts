@@ -56,6 +56,12 @@ router.get(
       .from(salesTable)
       .where(and(...saleConds, eq(salesTable.type, "ANIMAUX")));
 
+    // Animaux restants = stock actuel de tous les lots non supprimés
+    const [totalAnimalsRemaining] = await db
+      .select({ total: sum(batchesTable.currentCount) })
+      .from(batchesTable)
+      .where(and(...batchConds));
+
     const [monthlyRevenue] = await db
       .select({ total: sum(salesTable.totalAmount) })
       .from(salesTable)
@@ -131,6 +137,7 @@ router.get(
         activeBatches: activeBatchCount?.count ?? 0,
         totalAnimals: Number(totalAnimals?.total) || 0,
         totalAnimalsSold: Number(totalAnimalsSold?.total) || 0,
+        totalAnimalsRemaining: Number(totalAnimalsRemaining?.total) || 0,
         monthlyRevenue: revenue,
         monthlyExpenses: expenses,
         netProfit: revenue - expenses,

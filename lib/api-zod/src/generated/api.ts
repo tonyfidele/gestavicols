@@ -728,6 +728,7 @@ export const GetDashboardStatsResponse = zod.object({
   activeBatches: zod.number(),
   totalAnimals: zod.number(),
   totalAnimalsSold: zod.number(),
+  totalAnimalsRemaining: zod.number(),
   monthlyRevenue: zod.number(),
   monthlyExpenses: zod.number(),
   netProfit: zod.number(),
