@@ -8,10 +8,11 @@ import {
   useListBatches,
   useListFarms,
 } from "@workspace/api-client-react";
-import { Plus, Egg, Loader2, Pencil, Trash2, Calculator } from "lucide-react";
+import { Plus, Egg, Loader2, Pencil, Trash2, Calculator, FileSpreadsheet } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { toast } from "sonner";
+import * as XLSX from "xlsx";
 
 type EggRecord = {
   id: string;
@@ -64,6 +65,75 @@ export default function Eggs() {
     }
   };
 
+  const exportToExcel = () => {
+    const records = eggsData?.data ?? [];
+    if (records.length === 0) { toast.info("Aucune donnée à exporter"); return; }
+
+    const rows = records.map((r) => {
+      const net = r.eggsCollected - r.brokenEggs;
+      return {
+        "Date": format(new Date(r.date), "dd/MM/yyyy"),
+        "Lot": (r as any).batchName ?? "",
+        "Ferme": (r as any).farmName ?? "",
+        "Œufs collectés": r.eggsCollected,
+        "Œufs cassés": r.brokenEggs,
+        "Œufs nets": net,
+        "Œufs vendus": r.soldEggs,
+        "Prix unitaire (FCFA)": r.unitPrice ?? 0,
+        "Montant caisse (FCFA)": r.caisseAmount ?? 0,
+        "Œufs en stock": r.stockEggs,
+        "Caisses physiques": r.cratesCount,
+        "Notes": r.notes ?? "",
+      };
+    });
+
+    const totNet = records.reduce((s, r) => s + r.eggsCollected - r.brokenEggs, 0);
+    rows.push({
+      "Date": "TOTAL",
+      "Lot": "",
+      "Ferme": "",
+      "Œufs collectés": records.reduce((s, r) => s + r.eggsCollected, 0),
+      "Œufs cassés": records.reduce((s, r) => s + r.brokenEggs, 0),
+      "Œufs nets": totNet,
+      "Œufs vendus": records.reduce((s, r) => s + r.soldEggs, 0),
+      "Prix unitaire (FCFA)": 0,
+      "Montant caisse (FCFA)": records.reduce((s, r) => s + (r.caisseAmount ?? 0), 0),
+      "Œufs en stock": records.reduce((s, r) => s + r.stockEggs, 0),
+      "Caisses physiques": records.reduce((s, r) => s + r.cratesCount, 0),
+      "Notes": "",
+    });
+
+    const ws = XLSX.utils.json_to_sheet(rows);
+
+    ws["!cols"] = [
+      { wch: 12 }, { wch: 22 }, { wch: 22 },
+      { wch: 16 }, { wch: 14 }, { wch: 12 },
+      { wch: 14 }, { wch: 20 }, { wch: 22 },
+      { wch: 14 }, { wch: 18 }, { wch: 30 },
+    ];
+
+    const lastRow = rows.length + 1;
+    const totalRowIdx = lastRow;
+    const range = XLSX.utils.decode_range(ws["!ref"] ?? "A1");
+    for (let C = range.s.c; C <= range.e.c; C++) {
+      const headerCell = XLSX.utils.encode_cell({ r: 0, c: C });
+      if (!ws[headerCell]) continue;
+      ws[headerCell].s = { font: { bold: true }, fill: { fgColor: { rgb: "10B981" } }, alignment: { horizontal: "center" } };
+    }
+    for (let C = range.s.c; C <= range.e.c; C++) {
+      const totalCell = XLSX.utils.encode_cell({ r: totalRowIdx - 1, c: C });
+      if (!ws[totalCell]) continue;
+      ws[totalCell].s = { font: { bold: true }, fill: { fgColor: { rgb: "E2E8F0" } } };
+    }
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Production Œufs");
+
+    const today = format(new Date(), "yyyy-MM-dd");
+    XLSX.writeFile(wb, `production-oeufs-${today}.xlsx`);
+    toast.success("Export Excel téléchargé");
+  };
+
   const stats = useMemo(() => {
     const records = eggsData?.data ?? [];
     const totalCollected = records.reduce((s, r) => s + r.eggsCollected, 0);
@@ -82,12 +152,21 @@ export default function Eggs() {
           <h1 className="text-3xl font-display font-bold text-slate-900">Production d'Œufs</h1>
           <p className="text-slate-500 mt-1">Suivi journalier de la collecte d'œufs</p>
         </div>
-        <button
-          onClick={() => { setEditRecord(null); setIsModalOpen(true); }}
-          className="flex items-center gap-2 bg-primary hover:bg-emerald-600 text-white px-4 py-2.5 rounded-xl font-medium shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5"
-        >
-          <Plus className="w-5 h-5" /> Enregistrer collecte
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={exportToExcel}
+            disabled={isLoading || !eggsData?.data?.length}
+            className="flex items-center gap-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 px-4 py-2.5 rounded-xl font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            <FileSpreadsheet className="w-5 h-5" /> Exporter Excel
+          </button>
+          <button
+            onClick={() => { setEditRecord(null); setIsModalOpen(true); }}
+            className="flex items-center gap-2 bg-primary hover:bg-emerald-600 text-white px-4 py-2.5 rounded-xl font-medium shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5"
+          >
+            <Plus className="w-5 h-5" /> Enregistrer collecte
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
