@@ -92,7 +92,7 @@ export default function Analytics() {
         .toString()
         .replace(/\B(?=(\d{3})+(?!\d))/g, " ");
     const fmtFcfa = (n: number) => `${fmtNum(n)} FCFA`;
-    const fmtPct = (n: number) => `${Number(n).toFixed(1)}%`;
+    const fmtPct = (n: number) => `${Number(n).toFixed(2)}%`;
 
     const doc = new jsPDF({ orientation: "portrait" });
     const pageW = doc.internal.pageSize.width;
@@ -376,8 +376,8 @@ export default function Analytics() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <span className={`text-sm font-bold ${farm.avgMortality > 5 ? "text-red-600" : "text-emerald-600"}`}>
-                          {farm.avgMortality.toFixed(1)}% mortalité
+                        <span className={`text-sm font-bold ${farm.avgMortality > 5 ? "text-red-600" : farm.avgMortality > 0 ? "text-amber-600" : "text-emerald-600"}`}>
+                          {farm.avgMortality === 0 ? "0%" : farm.avgMortality < 0.1 ? `${farm.avgMortality.toFixed(2)}%` : `${farm.avgMortality.toFixed(1)}%`} mortalité
                         </span>
                       </div>
                     </div>

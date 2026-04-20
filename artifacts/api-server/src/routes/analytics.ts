@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, and, gte, lte, sql, sum, count, isNull } from "drizzle-orm";
+import { eq, and, gte, lte, sql, sum, count, isNull, ne } from "drizzle-orm";
 import { db } from "@workspace/db";
 import {
   batchesTable,
@@ -74,7 +74,7 @@ router.get(
         batchesTable,
         and(
           eq(batchesTable.farmId, farmsTable.id),
-          eq(batchesTable.status, "ACTIF")
+          ne(batchesTable.status, "TERMINE")
         )
       )
       .where(
