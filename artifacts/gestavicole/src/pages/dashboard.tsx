@@ -25,7 +25,7 @@ export default function Dashboard() {
   const kpis = [
     { label: "Fermes Actives", value: stats?.totalFarms || 0, icon: Tractor, color: "text-blue-600", bg: "bg-blue-100", suffix: "", sold: null, remaining: null },
     { label: "Lots en cours", value: stats?.activeBatches || 0, icon: Layers, color: "text-indigo-600", bg: "bg-indigo-100", suffix: "", sold: null, remaining: null },
-    { label: "Total Animaux", value: (stats?.totalAnimals || 0).toLocaleString(), icon: Target, color: "text-emerald-600", bg: "bg-emerald-100", suffix: "", sold: stats?.totalAnimalsSold || 0, remaining: stats?.totalAnimalsRemaining || 0 },
+    { label: "Total Animaux", value: (stats?.totalAnimals || 0).toLocaleString(), icon: Target, color: "text-emerald-600", bg: "bg-emerald-100", suffix: "", sold: stats?.totalAnimalsSold || 0, remaining: Math.max(0, (stats?.totalAnimals || 0) - (stats?.totalAnimalsSold || 0)) },
     { label: "Mortalités / 7j", value: mortalityThisWeek, icon: SkullIcon, color: mortalityThisWeek > 0 ? "text-red-600" : "text-slate-400", bg: mortalityThisWeek > 0 ? "bg-red-100" : "bg-slate-100", suffix: "", sold: null, remaining: null },
     { label: "Alertes Stock", value: stats?.lowStockAlerts || 0, icon: AlertTriangle, color: "text-amber-600", bg: "bg-amber-100", suffix: "", sold: null, remaining: null },
   ];
