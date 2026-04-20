@@ -171,7 +171,10 @@ export interface CreateBatchRequest {
 
 export interface UpdateBatchRequest {
   name?: string;
+  buildingId?: string | null;
+  species?: string;
   status?: BatchStatus;
+  startDate?: string;
   endDate?: string;
 }
 

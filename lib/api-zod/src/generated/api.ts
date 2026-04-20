@@ -388,7 +388,7 @@ export const CreateBatchBody = zod.object({
   buildingId: zod.string().optional(),
   species: zod.string(),
   initialCount: zod.number(),
-  startDate: zod.coerce.date(),
+  startDate: zod.string(),
 });
 
 /**
@@ -424,8 +424,11 @@ export const UpdateBatchParams = zod.object({
 
 export const UpdateBatchBody = zod.object({
   name: zod.string().optional(),
+  buildingId: zod.string().nullish(),
+  species: zod.string().optional(),
   status: zod.enum(["ACTIF", "TERMINE", "EN_ATTENTE"]).optional(),
-  endDate: zod.coerce.date().optional(),
+  startDate: zod.string().optional(),
+  endDate: zod.string().optional(),
 });
 
 export const UpdateBatchResponse = zod.object({

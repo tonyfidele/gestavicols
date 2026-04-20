@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { AppLayout } from "@/components/layout/app-layout";
-import { useListBatches, useCreateBatch, useDeleteBatch, useUpdateBatch, useListFarms } from "@workspace/api-client-react";
+import { useListBatches, useCreateBatch, useDeleteBatch, useUpdateBatch, useListFarms, useListBuildings } from "@workspace/api-client-react";
 import { Plus, Layers, Loader2, ArrowRight, Activity, Trash2, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "wouter";
@@ -12,6 +12,7 @@ type Batch = {
   name: string;
   farmId: string;
   farmName: string;
+  buildingId?: string | null;
   species: string;
   initialCount: number;
   currentCount: number;
@@ -181,9 +182,10 @@ export default function Batches() {
 }
 
 function CreateBatchModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
-  const [formData, setFormData] = useState({ name: "", farmId: "", species: "", initialCount: "", startDate: format(new Date(), "yyyy-MM-dd") });
+  const [formData, setFormData] = useState({ name: "", farmId: "", buildingId: "", species: "", initialCount: "", startDate: format(new Date(), "yyyy-MM-dd") });
   const createMutation = useCreateBatch();
   const { data: farmsData } = useListFarms({ limit: 100 });
+  const { data: buildingsData } = useListBuildings(formData.farmId, { query: { enabled: !!formData.farmId } });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -192,6 +194,7 @@ function CreateBatchModal({ onClose, onSuccess }: { onClose: () => void; onSucce
         data: {
           name: formData.name,
           farmId: formData.farmId,
+          buildingId: formData.buildingId || undefined,
           species: formData.species,
           initialCount: parseInt(formData.initialCount, 10),
           startDate: new Date(formData.startDate).toISOString(),
@@ -219,13 +222,24 @@ function CreateBatchModal({ onClose, onSuccess }: { onClose: () => void; onSucce
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Ferme</label>
-            <select required value={formData.farmId} onChange={(e) => setFormData({ ...formData, farmId: e.target.value })} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none">
+            <select required value={formData.farmId} onChange={(e) => setFormData({ ...formData, farmId: e.target.value, buildingId: "" })} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none">
               <option value="">Sélectionner une ferme</option>
               {farmsData?.data.map((f) => (
                 <option key={f.id} value={f.id}>{f.name}</option>
               ))}
             </select>
           </div>
+          {formData.farmId && (
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Bâtiment <span className="text-slate-400 font-normal">(optionnel)</span></label>
+              <select value={formData.buildingId} onChange={(e) => setFormData({ ...formData, buildingId: e.target.value })} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none bg-white">
+                <option value="">— Aucun bâtiment —</option>
+                {buildingsData?.data.map((b) => (
+                  <option key={b.id} value={b.id}>{b.name} (cap. {b.capacity.toLocaleString()})</option>
+                ))}
+              </select>
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Espèce</label>
@@ -255,13 +269,14 @@ function CreateBatchModal({ onClose, onSuccess }: { onClose: () => void; onSucce
 function EditBatchModal({ batch, onClose, onSuccess }: { batch: Batch; onClose: () => void; onSuccess: () => void }) {
   const [formData, setFormData] = useState({
     name: batch.name,
+    buildingId: batch.buildingId ?? "",
     species: batch.species,
     status: batch.status,
     startDate: batch.startDate ? batch.startDate.split("T")[0] : "",
     endDate: batch.endDate ? batch.endDate.split("T")[0] : "",
   });
   const updateMutation = useUpdateBatch();
-  const { data: farmsData } = useListFarms({ limit: 100 });
+  const { data: buildingsData } = useListBuildings(batch.farmId, { query: { enabled: !!batch.farmId } });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -270,6 +285,7 @@ function EditBatchModal({ batch, onClose, onSuccess }: { batch: Batch; onClose: 
         batchId: batch.id,
         data: {
           name: formData.name,
+          buildingId: formData.buildingId || null,
           species: formData.species,
           status: formData.status as any,
           startDate: new Date(formData.startDate).toISOString(),
@@ -295,6 +311,15 @@ function EditBatchModal({ batch, onClose, onSuccess }: { batch: Batch; onClose: 
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Référence</label>
             <input required type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Bâtiment <span className="text-slate-400 font-normal">(optionnel)</span></label>
+            <select value={formData.buildingId} onChange={(e) => setFormData({ ...formData, buildingId: e.target.value })} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none bg-white">
+              <option value="">— Aucun bâtiment —</option>
+              {buildingsData?.data.map((b) => (
+                <option key={b.id} value={b.id}>{b.name} (cap. {b.capacity.toLocaleString()})</option>
+              ))}
+            </select>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
