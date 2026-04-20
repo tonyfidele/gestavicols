@@ -20,8 +20,10 @@ router.get(
     const query = GetAnalyticsQueryParams.safeParse(req.query);
     const user = req.user!;
 
-    const startDate = query.success && query.data.startDate ? query.data.startDate : new Date(new Date().getFullYear(), 0, 1).toISOString().split("T")[0];
-    const endDate = query.success && query.data.endDate ? query.data.endDate : new Date().toISOString().split("T")[0];
+    const now = new Date();
+    const startDate = query.success && query.data.startDate ? query.data.startDate : `${now.getFullYear()}-01-01`;
+    // Use end-of-year as fallback so all dates in the current year are included
+    const endDate = query.success && query.data.endDate ? query.data.endDate : `${now.getFullYear()}-12-31`;
 
     const salesConditions = user.role !== "SUPER_ADMIN" ? [eq(salesTable.tenantId, user.tenantId)] : [];
     const expenseConditions = user.role !== "SUPER_ADMIN" ? [eq(expensesTable.tenantId, user.tenantId)] : [];
@@ -93,10 +95,7 @@ router.get(
         transactions: count(salesTable.id),
       })
       .from(salesTable)
-      .where(and(
-        ...(user.role !== "SUPER_ADMIN" ? [eq(salesTable.tenantId, user.tenantId)] : []),
-        isNull(salesTable.deletedAt)
-      ))
+      .where(and(...salesConditions))
       .groupBy(sql`to_char(${salesTable.saleDate}::date, 'YYYY-MM')`)
       .orderBy(sql`to_char(${salesTable.saleDate}::date, 'YYYY-MM')`)
       .limit(12);
@@ -108,10 +107,7 @@ router.get(
         category: expensesTable.category,
       })
       .from(expensesTable)
-      .where(and(
-        ...(user.role !== "SUPER_ADMIN" ? [eq(expensesTable.tenantId, user.tenantId)] : []),
-        isNull(expensesTable.deletedAt)
-      ))
+      .where(and(...expenseConditions))
       .groupBy(sql`to_char(${expensesTable.date}::date, 'YYYY-MM')`, expensesTable.category)
       .orderBy(sql`to_char(${expensesTable.date}::date, 'YYYY-MM')`)
       .limit(60);

@@ -496,7 +496,7 @@ export const CreateDailyRecordParams = zod.object({
 });
 
 export const CreateDailyRecordBody = zod.object({
-  date: zod.coerce.date(),
+  date: zod.string(),
   mortality: zod.number(),
   feedConsumption: zod.number(),
   waterConsumption: zod.number(),
@@ -580,7 +580,7 @@ export const CreateSaleBody = zod.object({
   quantity: zod.number(),
   unitPrice: zod.number(),
   buyerName: zod.string(),
-  saleDate: zod.coerce.date(),
+  saleDate: zod.string(),
   type: zod.string(),
   notes: zod.string().optional(),
 });
@@ -671,7 +671,7 @@ export const CreateExpenseBody = zod.object({
   category: zod.string(),
   description: zod.string(),
   amount: zod.number(),
-  date: zod.coerce.date(),
+  date: zod.string(),
   batchId: zod.string().optional(),
   farmId: zod.string().optional(),
 });
@@ -710,13 +710,13 @@ export const CreateVeterinaryRecordParams = zod.object({
 });
 
 export const CreateVeterinaryRecordBody = zod.object({
-  date: zod.coerce.date(),
+  date: zod.string(),
   type: zod.string(),
   description: zod.string(),
   treatment: zod.string().optional(),
   medication: zod.string().optional(),
   dosage: zod.string().optional(),
-  nextVisit: zod.coerce.date().optional(),
+  nextVisit: zod.string().optional(),
 });
 
 /**
@@ -1066,7 +1066,7 @@ export const UpdateExpenseBody = zod.object({
   category: zod.string(),
   description: zod.string(),
   amount: zod.number(),
-  date: zod.coerce.date(),
+  date: zod.string(),
   batchId: zod.string().optional(),
   farmId: zod.string().optional(),
 });
@@ -1148,7 +1148,7 @@ export const ListEggProductionsResponse = zod.object({
 export const CreateEggProductionBody = zod.object({
   batchId: zod.string(),
   farmId: zod.string(),
-  date: zod.coerce.date(),
+  date: zod.string(),
   eggsCollected: zod.number(),
   brokenEggs: zod.number().optional(),
   soldEggs: zod.number().optional(),
@@ -1167,7 +1167,7 @@ export const UpdateEggProductionParams = zod.object({
 export const UpdateEggProductionBody = zod.object({
   batchId: zod.string(),
   farmId: zod.string(),
-  date: zod.coerce.date(),
+  date: zod.string(),
   eggsCollected: zod.number(),
   brokenEggs: zod.number().optional(),
   soldEggs: zod.number().optional(),
@@ -1205,8 +1205,8 @@ export const DeleteEggProductionResponse = zod.object({
  * @summary Get analytics data
  */
 export const GetAnalyticsQueryParams = zod.object({
-  startDate: zod.date().optional(),
-  endDate: zod.date().optional(),
+  startDate: zod.string().optional(),
+  endDate: zod.string().optional(),
 });
 
 export const GetAnalyticsResponse = zod.object({
