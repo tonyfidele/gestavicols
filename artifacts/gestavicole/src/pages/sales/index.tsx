@@ -219,6 +219,11 @@ function SaleModal({ sale, onClose, onSuccess }: { sale: Sale | null; onClose: (
 
   const customers = customersData?.data ?? [];
 
+  const selectedBatch = batches?.data.find(b => b.id === formData.batchId);
+  const batchExhausted = !!selectedBatch && selectedBatch.currentCount <= 0;
+  const quantityExceedsStock = !!selectedBatch && parseInt(formData.quantity || "0", 10) > selectedBatch.currentCount;
+  const saleBlocked = batchExhausted || quantityExceedsStock;
+
   const handleCustomerSelect = (customerId: string) => {
     if (!customerId) {
       setFormData({ ...formData, customerId: "", buyerName: "" });
@@ -251,8 +256,9 @@ function SaleModal({ sale, onClose, onSuccess }: { sale: Sale | null; onClose: (
       }
       onSuccess();
       onClose();
-    } catch {
-      toast.error("Erreur lors de l'enregistrement");
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      toast.error(msg || "Erreur lors de l'enregistrement");
     }
   };
 
@@ -318,18 +324,30 @@ function SaleModal({ sale, onClose, onSuccess }: { sale: Sale | null; onClose: (
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Lot (Optionnel)</label>
             <select value={formData.batchId} onChange={e => setFormData({ ...formData, batchId: e.target.value })}
-              className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none bg-white">
+              className={`w-full px-4 py-2.5 rounded-xl border focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none bg-white ${batchExhausted ? "border-red-400 bg-red-50" : "border-slate-200"}`}>
               <option value="">Sélectionner un lot</option>
-              {batches?.data.map(b => <option key={b.id} value={b.id}>{b.name} ({b.currentCount} dispo)</option>)}
+              {batches?.data.map(b => (
+                <option key={b.id} value={b.id} disabled={b.currentCount <= 0}>
+                  {b.currentCount <= 0 ? `⛔ ${b.name} — ÉPUISÉ` : `${b.name} (${b.currentCount} dispo)`}
+                </option>
+              ))}
             </select>
+            {batchExhausted && (
+              <p className="text-xs text-red-600 mt-1 font-medium">⛔ Ce lot est épuisé — aucune vente possible.</p>
+            )}
           </div>
 
           {/* Quantité et Prix */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Quantité</label>
-              <input required type="number" min="1" value={formData.quantity} onChange={e => setFormData({ ...formData, quantity: e.target.value })}
-                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" />
+              <input required type="number" min="1"
+                max={selectedBatch ? selectedBatch.currentCount : undefined}
+                value={formData.quantity} onChange={e => setFormData({ ...formData, quantity: e.target.value })}
+                className={`w-full px-4 py-2.5 rounded-xl border focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none ${quantityExceedsStock ? "border-red-400 bg-red-50" : "border-slate-200"}`} />
+              {quantityExceedsStock && (
+                <p className="text-xs text-red-600 mt-1">Max {selectedBatch!.currentCount} disponibles</p>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Prix Unitaire (FCFA)</label>
@@ -357,7 +375,7 @@ function SaleModal({ sale, onClose, onSuccess }: { sale: Sale | null; onClose: (
 
           <div className="pt-2 flex justify-end gap-3">
             <button type="button" onClick={onClose} className="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-100 font-medium">Annuler</button>
-            <button type="submit" disabled={isPending} className="px-6 py-2 rounded-xl bg-primary hover:bg-emerald-600 text-white font-medium disabled:opacity-50">
+            <button type="submit" disabled={isPending || saleBlocked} className="px-6 py-2 rounded-xl bg-primary hover:bg-emerald-600 text-white font-medium disabled:opacity-50 disabled:cursor-not-allowed">
               {isPending ? "Enregistrement..." : isEdit ? "Mettre à jour" : "Enregistrer"}
             </button>
           </div>

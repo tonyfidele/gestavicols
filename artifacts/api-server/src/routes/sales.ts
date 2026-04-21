@@ -90,6 +90,28 @@ router.post(
     const user = req.user!;
     const totalAmount = parsed.data.quantity * parsed.data.unitPrice;
 
+    if (parsed.data.batchId) {
+      const [batch] = await db
+        .select({ currentCount: batchesTable.currentCount, status: batchesTable.status })
+        .from(batchesTable)
+        .where(and(eq(batchesTable.id, parsed.data.batchId), isNull(batchesTable.deletedAt)));
+
+      if (!batch) {
+        res.status(404).json({ message: "Lot introuvable" });
+        return;
+      }
+      if (batch.currentCount <= 0) {
+        res.status(400).json({ message: "Ce lot est épuisé, aucune vente ne peut être enregistrée." });
+        return;
+      }
+      if (parsed.data.quantity > batch.currentCount) {
+        res.status(400).json({
+          message: `Quantité insuffisante. Ce lot ne dispose que de ${batch.currentCount} animaux disponibles.`,
+        });
+        return;
+      }
+    }
+
     const [sale] = await db
       .insert(salesTable)
       .values({
