@@ -91,6 +91,8 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
     "ANALYTICS:READ",
     "CUSTOMER:READ",
     "SALARY:CREATE", "SALARY:READ", "SALARY:UPDATE", "SALARY:DELETE",
+    "BATCH:READ",
+    "FARM:READ",
   ],
 };
 
