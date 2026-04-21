@@ -63,6 +63,7 @@ router.get(
         capacity: farmsTable.capacity,
         tenantId: farmsTable.tenantId,
         managerId: farmsTable.managerId,
+        isActive: farmsTable.isActive,
         createdAt: farmsTable.createdAt,
         managerName: usersTable.name,
       })
@@ -170,6 +171,7 @@ router.get(
         capacity: farmsTable.capacity,
         tenantId: farmsTable.tenantId,
         managerId: farmsTable.managerId,
+        isActive: farmsTable.isActive,
         createdAt: farmsTable.createdAt,
         managerName: usersTable.name,
       })
@@ -298,6 +300,30 @@ router.delete(
 
     await logAudit(user, "DELETE_FARM", "FARM", deleted.id, `Cascade deleted farm ${deleted.name}`);
     res.json(DeleteFarmResponse.parse({ message: "Ferme et toutes ses données supprimées" }));
+  }
+);
+
+router.patch(
+  "/farms/:farmId/toggle-active",
+  requireAuth,
+  requirePermission("FARM", "UPDATE"),
+  async (req, res): Promise<void> => {
+    const { farmId } = req.params;
+    const user = req.user!;
+    const conditions = [eq(farmsTable.id, farmId), isNull(farmsTable.deletedAt)];
+    if (user.role !== "SUPER_ADMIN") conditions.push(eq(farmsTable.tenantId, user.tenantId));
+
+    const [farm] = await db.select({ isActive: farmsTable.isActive }).from(farmsTable).where(and(...conditions));
+    if (!farm) { res.status(404).json({ message: "Ferme introuvable" }); return; }
+
+    const [updated] = await db
+      .update(farmsTable)
+      .set({ isActive: !farm.isActive })
+      .where(and(...conditions))
+      .returning();
+
+    await logAudit(user, "TOGGLE_FARM", "FARM", updated.id, `Farm ${updated.isActive ? "activated" : "deactivated"}`);
+    res.json({ id: updated.id, isActive: updated.isActive, message: updated.isActive ? "Ferme activée" : "Ferme désactivée" });
   }
 );
 

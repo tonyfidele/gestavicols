@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { AppLayout } from "@/components/layout/app-layout";
 import { useGetFarm, useListBuildings, useCreateBuilding, useListBatches } from "@workspace/api-client-react";
 import { useParams, Link } from "wouter";
-import { ArrowLeft, Building2, Plus, Loader2, Tractor, MapPin, Users, Layers, CheckCircle, XCircle, Trash2 } from "lucide-react";
+import { ArrowLeft, Building2, Plus, Loader2, Tractor, MapPin, Users, Layers, CheckCircle, XCircle, Trash2, PowerOff, Power } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -87,9 +87,29 @@ export default function FarmDetail() {
   const { data: batchesData, isLoading: batchLoading } = useListBatches({ farmId: id, limit: 5 }, { query: { enabled: !!id } });
 
   const farm = farmData;
-  const isActive = (farm?.activeBatchesCount ?? 0) > 0 || (farm?.buildingsCount ?? 0) > 0;
+  const isActive = (farm as (typeof farmData & { isActive?: boolean }) | undefined)?.isActive !== false;
+  const [isToggling, setIsToggling] = useState(false);
 
   const handleRefresh = () => { refetchFarm(); refetchBld(); };
+
+  const handleToggleActive = async () => {
+    if (!farm) return;
+    setIsToggling(true);
+    try {
+      const res = await fetch(`/api/farms/${farm.id}/toggle-active`, {
+        method: "PATCH",
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error();
+      const data = await res.json() as { isActive: boolean; message: string };
+      toast.success(data.message);
+      refetchFarm();
+    } catch {
+      toast.error("Erreur lors du changement de statut");
+    } finally {
+      setIsToggling(false);
+    }
+  };
 
   if (farmLoading) {
     return (
@@ -139,15 +159,36 @@ export default function FarmDetail() {
                 </div>
               </div>
             </div>
-            <div className="flex gap-6 text-center">
-              <div>
-                <p className="text-2xl font-bold text-slate-800">{farm.buildingsCount}</p>
-                <p className="text-xs text-slate-500 uppercase tracking-wider">Bâtiments</p>
+            <div className="flex items-center gap-6">
+              <div className="flex gap-6 text-center">
+                <div>
+                  <p className="text-2xl font-bold text-slate-800">{farm.buildingsCount}</p>
+                  <p className="text-xs text-slate-500 uppercase tracking-wider">Bâtiments</p>
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-indigo-600">{farm.activeBatchesCount}</p>
+                  <p className="text-xs text-slate-500 uppercase tracking-wider">Lots en cours</p>
+                </div>
               </div>
-              <div>
-                <p className="text-2xl font-bold text-indigo-600">{farm.activeBatchesCount}</p>
-                <p className="text-xs text-slate-500 uppercase tracking-wider">Lots en cours</p>
-              </div>
+              <button
+                onClick={handleToggleActive}
+                disabled={isToggling}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium text-sm transition-colors disabled:opacity-50 ${
+                  isActive
+                    ? "bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200"
+                    : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200"
+                }`}
+                title={isActive ? "Désactiver la ferme" : "Activer la ferme"}
+              >
+                {isToggling ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : isActive ? (
+                  <PowerOff className="w-4 h-4" />
+                ) : (
+                  <Power className="w-4 h-4" />
+                )}
+                {isActive ? "Désactiver" : "Activer"}
+              </button>
             </div>
           </div>
         </div>

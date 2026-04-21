@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { AppLayout } from "@/components/layout/app-layout";
 import { useListFarms, useCreateFarm, useDeleteFarm } from "@workspace/api-client-react";
-import { MapPin, Users, Tractor, Plus, Loader2, Trash2, AlertTriangle, CheckCircle, XCircle, ChevronRight } from "lucide-react";
+import { MapPin, Users, Tractor, Plus, Loader2, Trash2, AlertTriangle, CheckCircle, XCircle, ChevronRight, PowerOff, Power } from "lucide-react";
 import { Link } from "wouter";
 import { toast } from "sonner";
 
@@ -12,11 +12,13 @@ type Farm = {
   capacity: number;
   buildingsCount: number;
   activeBatchesCount: number;
+  isActive?: boolean;
 };
 
 export default function Farms() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Farm | null>(null);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
   const { data: farmsData, isLoading, refetch } = useListFarms({ limit: 50 });
   const deleteMutation = useDeleteFarm();
 
@@ -30,6 +32,24 @@ export default function Farms() {
       toast.error("Erreur lors de la suppression");
     } finally {
       setDeleteTarget(null);
+    }
+  };
+
+  const handleToggleActive = async (farm: Farm) => {
+    setTogglingId(farm.id);
+    try {
+      const res = await fetch(`/api/farms/${farm.id}/toggle-active`, {
+        method: "PATCH",
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error();
+      const data = await res.json() as { isActive: boolean; message: string };
+      toast.success(data.message);
+      refetch();
+    } catch {
+      toast.error("Erreur lors du changement de statut");
+    } finally {
+      setTogglingId(null);
     }
   };
 
@@ -53,9 +73,36 @@ export default function Farms() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {farmsData?.data.map((farm) => {
-            const isActive = (farm.activeBatchesCount > 0) || (farm.buildingsCount > 0);
+            const active = (farm as Farm).isActive !== false;
+            const isToggling = togglingId === farm.id;
             return (
-              <div key={farm.id} className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm hover:shadow-xl hover:border-primary/30 transition-all duration-300 group relative">
+              <div
+                key={farm.id}
+                className={`bg-white border rounded-2xl p-6 shadow-sm hover:shadow-xl transition-all duration-300 group relative ${
+                  active ? "border-slate-200 hover:border-primary/30" : "border-slate-200 opacity-70"
+                }`}
+              >
+                {/* Toggle active button */}
+                <button
+                  onClick={() => handleToggleActive(farm as Farm)}
+                  disabled={isToggling}
+                  className={`absolute top-4 right-20 p-2 rounded-xl transition-colors opacity-0 group-hover:opacity-100 disabled:opacity-50 ${
+                    active
+                      ? "text-slate-300 hover:text-amber-500 hover:bg-amber-50"
+                      : "text-slate-300 hover:text-emerald-500 hover:bg-emerald-50"
+                  }`}
+                  title={active ? "Désactiver la ferme" : "Activer la ferme"}
+                >
+                  {isToggling ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : active ? (
+                    <PowerOff className="w-4 h-4" />
+                  ) : (
+                    <Power className="w-4 h-4" />
+                  )}
+                </button>
+
+                {/* Delete button */}
                 <button
                   onClick={() => setDeleteTarget(farm as Farm)}
                   className="absolute top-4 right-12 p-2 rounded-xl text-slate-300 hover:text-red-500 hover:bg-red-50 transition-colors opacity-0 group-hover:opacity-100"
@@ -63,23 +110,24 @@ export default function Farms() {
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
+
                 <Link href={`/farms/${farm.id}`} className="absolute top-4 right-4 p-2 rounded-xl text-slate-300 hover:text-primary hover:bg-emerald-50 transition-colors" title="Voir le détail">
                   <ChevronRight className="w-4 h-4" />
                 </Link>
 
                 <div className="flex items-start gap-3 mb-4">
-                  <div className="w-12 h-12 rounded-xl bg-emerald-50 text-primary flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0">
+                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0 ${active ? "bg-emerald-50 text-primary" : "bg-slate-100 text-slate-400"}`}>
                     <Tractor className="w-6 h-6" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-slate-900 pr-16">{farm.name}</h3>
-                    {isActive ? (
+                    <h3 className="text-xl font-bold text-slate-900 pr-24">{farm.name}</h3>
+                    {active ? (
                       <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 mt-1">
-                        <CheckCircle className="w-3 h-3" /> Actif
+                        <CheckCircle className="w-3 h-3" /> Active
                       </span>
                     ) : (
                       <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 mt-1">
-                        <XCircle className="w-3 h-3" /> Inactif
+                        <XCircle className="w-3 h-3" /> Désactivée
                       </span>
                     )}
                   </div>
@@ -144,6 +192,12 @@ export default function Farms() {
                 <li>• Toutes les ventes et dépenses liées</li>
                 <li>• Toutes les productions d'œufs</li>
               </ul>
+            </div>
+
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-6">
+              <p className="text-sm text-amber-700">
+                💡 <strong>Alternative :</strong> vous pouvez désactiver la ferme au lieu de la supprimer pour conserver toutes les données.
+              </p>
             </div>
 
             <div className="flex gap-3">
