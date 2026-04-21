@@ -56,8 +56,11 @@ export default function Users() {
       await deleteMutation.mutateAsync({ userId: deleteTarget.id });
       toast.success(`Utilisateur "${deleteTarget.name}" supprimé`);
       refetch();
-    } catch {
-      toast.error("Erreur lors de la suppression");
+    } catch (err: unknown) {
+      const apiErr = err as { data?: { message?: string }; status?: number; message?: string };
+      const msg = apiErr?.data?.message || apiErr?.message || "Erreur lors de la suppression";
+      toast.error(msg);
+      console.error("Delete user error:", err);
     } finally {
       setDeleteTarget(null);
     }
