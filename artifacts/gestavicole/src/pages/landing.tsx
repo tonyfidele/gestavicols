@@ -149,11 +149,10 @@ export default function Landing() {
               const c = colorMap[group.color];
               return (
                 <div key={group.label}>
-                  <div className="flex items-center gap-3 mb-5">
-                    <span className={`text-xs font-bold px-3 py-1.5 rounded-full ${c.badge} ${c.badgeText} tracking-wider uppercase`}>
+                  <div className="flex items-center justify-center mb-5">
+                    <span className={`text-xs font-bold px-4 py-1.5 rounded-full ${c.badge} ${c.badgeText} tracking-wider uppercase`}>
                       {group.label}
                     </span>
-                    <div className="h-px flex-1 bg-slate-200" />
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
                     {group.items.map((f) => (
