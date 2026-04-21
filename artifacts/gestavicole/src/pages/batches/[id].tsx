@@ -12,6 +12,7 @@ import {
   useUpdateBatch,
   useListStock,
   useCreateStockMovement,
+  useListStockMovements,
   type DailyRecord,
 } from "@workspace/api-client-react";
 import { Loader2, ArrowLeft, Layers, Activity, Egg, Droplets, Thermometer, Plus, Syringe, Pill, Calendar, SkullIcon, XCircle, CheckCircle2, Pencil, Trash2, ShoppingBag } from "lucide-react";
@@ -596,7 +597,9 @@ export default function BatchDetail() {
   } = useGetBatch(id ?? "", { query: { enabled: !!id } });
 
   const { data: dailyRecords, refetch: refetchDaily, isLoading: dailyLoading } = useListDailyRecords(id ?? "", { limit: 30 }, { query: { enabled: !!id } });
+  const { data: allDailyRecords } = useListDailyRecords(id ?? "", { limit: 1000 }, { query: { enabled: !!id } });
   const { data: vetRecords, refetch: refetchVet, isLoading: vetLoading } = useListVeterinaryRecords(id ?? "", { query: { enabled: !!id } });
+  const { data: feedMovements } = useListStockMovements({ batchId: id, limit: 500 }, { query: { enabled: !!id } });
   const { mutate: deleteVetRecord, isPending: isDeletingVet } = useDeleteVeterinaryRecord();
   const { mutate: deleteDailyRecord, isPending: isDeletingDaily } = useDeleteDailyRecord();
 
@@ -629,6 +632,22 @@ export default function BatchDetail() {
     œufs: r.eggsCollected ?? 0,
     temp: r.temperature ?? 0,
   }));
+
+  const totalFeedFromDailyRecords = (allDailyRecords?.data ?? []).reduce(
+    (sum, r) => sum + (r.feedConsumption || 0),
+    0
+  );
+
+  const sortieMovements = (feedMovements?.data ?? []).filter(m => m.type === "SORTIE");
+  const feedByProduct: Record<string, { name: string; total: number }> = {};
+  for (const m of sortieMovements) {
+    if (!feedByProduct[m.stockItemId]) {
+      feedByProduct[m.stockItemId] = { name: m.stockItemName, total: 0 };
+    }
+    feedByProduct[m.stockItemId].total += m.quantity;
+  }
+  const feedByProductList = Object.values(feedByProduct).sort((a, b) => b.total - a.total);
+  const totalFeedFromStock = sortieMovements.reduce((s, m) => s + m.quantity, 0);
 
   const handleRefreshAll = () => {
     refetchBatch();
@@ -777,6 +796,53 @@ export default function BatchDetail() {
           </ResponsiveContainer>
         </div>
       )}
+
+      {/* Consommation d'aliment */}
+      <div className="bg-white rounded-2xl border border-slate-200 p-6 mb-6">
+        <div className="flex items-center gap-2 mb-4">
+          <ShoppingBag className="w-5 h-5 text-orange-500" />
+          <h2 className="text-sm font-bold text-slate-700 uppercase tracking-wider">Consommation d'aliment</h2>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+          <div className="bg-orange-50 rounded-xl p-4">
+            <p className="text-xs font-medium text-orange-600 uppercase tracking-wider mb-1">Total relevés journaliers</p>
+            <p className="text-2xl font-bold text-orange-800">{totalFeedFromDailyRecords.toLocaleString("fr-FR", { maximumFractionDigits: 1 })} kg</p>
+            <p className="text-xs text-orange-500 mt-1">Cumul saisi dans les relevés</p>
+          </div>
+          <div className="bg-amber-50 rounded-xl p-4">
+            <p className="text-xs font-medium text-amber-600 uppercase tracking-wider mb-1">Total sorties de stock</p>
+            <p className="text-2xl font-bold text-amber-800">{totalFeedFromStock.toLocaleString("fr-FR", { maximumFractionDigits: 1 })}</p>
+            <p className="text-xs text-amber-500 mt-1">Via mouvements de stock</p>
+          </div>
+        </div>
+
+        {feedByProductList.length > 0 ? (
+          <div>
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Détail par produit</p>
+            <div className="divide-y divide-slate-100 rounded-xl border border-slate-100 overflow-hidden">
+              {feedByProductList.map((p) => {
+                const pct = totalFeedFromStock > 0 ? (p.total / totalFeedFromStock) * 100 : 0;
+                return (
+                  <div key={p.name} className="flex items-center gap-4 px-4 py-3 bg-white">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-slate-800 truncate">{p.name}</p>
+                      <div className="mt-1 h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                        <div className="h-full bg-orange-400 rounded-full" style={{ width: `${pct}%` }} />
+                      </div>
+                    </div>
+                    <p className="text-sm font-bold text-slate-900 whitespace-nowrap shrink-0">
+                      {p.total.toLocaleString("fr-FR", { maximumFractionDigits: 1 })}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ) : (
+          <p className="text-sm text-slate-400 text-center py-4">Aucune sortie de stock enregistrée pour ce lot</p>
+        )}
+      </div>
 
       <div className="flex gap-4 border-b border-slate-200 mb-6">
         <button
