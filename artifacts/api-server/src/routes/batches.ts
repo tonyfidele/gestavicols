@@ -9,6 +9,7 @@ import {
   dailyRecordsTable,
   usersTable,
   veterinaryRecordsTable,
+  stockMovementsTable,
 } from "@workspace/db";
 import {
   ListBatchesQueryParams,
@@ -488,6 +489,31 @@ router.delete(
 
     await logAudit(user, "DELETE_VET_RECORD", "VET_RECORD", recordId);
     res.json({ id: recordId });
+  }
+);
+
+router.delete(
+  "/batches/:batchId/feed-movements",
+  requireAuth,
+  requirePermission("STOCK", "DELETE"),
+  async (req, res): Promise<void> => {
+    const { batchId } = req.params;
+    const user = req.user!;
+
+    const batchConds = [eq(batchesTable.id, batchId), isNull(batchesTable.deletedAt)];
+    if (user.role !== "SUPER_ADMIN") batchConds.push(eq(batchesTable.tenantId, user.tenantId));
+    const [batch] = await db.select({ id: batchesTable.id, name: batchesTable.name }).from(batchesTable).where(and(...batchConds));
+    if (!batch) {
+      res.status(404).json({ message: "Lot introuvable" });
+      return;
+    }
+
+    const result = await db
+      .delete(stockMovementsTable)
+      .where(and(eq(stockMovementsTable.batchId, batchId), eq(stockMovementsTable.type, "SORTIE")));
+
+    await logAudit(user, "CLEAR_FEED_MOVEMENTS", "STOCK", batchId, `Cleared feed consumption history for batch ${batch.name}`);
+    res.json({ deleted: result.rowCount ?? 0 });
   }
 );
 

@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { AppLayout } from "@/components/layout/app-layout";
 import {
   useGetBatch,
@@ -588,6 +589,8 @@ export default function BatchDetail() {
   const [deletingDailyId, setDeletingDailyId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"daily" | "vet">("daily");
   const [isConsomModalOpen, setIsConsomModalOpen] = useState(false);
+  const [showClearFeedConfirm, setShowClearFeedConfirm] = useState(false);
+  const queryClient = useQueryClient();
 
   const {
     data: batchData,
@@ -599,7 +602,27 @@ export default function BatchDetail() {
   const { data: dailyRecords, refetch: refetchDaily, isLoading: dailyLoading } = useListDailyRecords(id ?? "", { limit: 30 }, { query: { enabled: !!id } });
   const { data: allDailyRecords } = useListDailyRecords(id ?? "", { limit: 1000 }, { query: { enabled: !!id } });
   const { data: vetRecords, refetch: refetchVet, isLoading: vetLoading } = useListVeterinaryRecords(id ?? "", { query: { enabled: !!id } });
-  const { data: feedMovements } = useListStockMovements({ batchId: id, limit: 500 }, { query: { enabled: !!id } });
+  const { data: feedMovements, refetch: refetchFeedMovements } = useListStockMovements({ batchId: id, limit: 500 }, { query: { enabled: !!id } });
+
+  const clearFeedMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch(`/api/batches/${id}/feed-movements`, { method: "DELETE", credentials: "include" });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error((err as { message?: string }).message || "Erreur lors de la suppression");
+      }
+      return res.json() as Promise<{ deleted: number }>;
+    },
+    onSuccess: (data) => {
+      toast.success(`${data.deleted} enregistrement(s) de consommation supprimé(s)`);
+      setShowClearFeedConfirm(false);
+      refetchFeedMovements();
+      queryClient.invalidateQueries({ queryKey: ["listStockMovements"] });
+    },
+    onError: (err: Error) => {
+      toast.error(err.message || "Erreur lors de la suppression");
+    },
+  });
   const { mutate: deleteVetRecord, isPending: isDeletingVet } = useDeleteVeterinaryRecord();
   const { mutate: deleteDailyRecord, isPending: isDeletingDaily } = useDeleteDailyRecord();
 
@@ -799,9 +822,20 @@ export default function BatchDetail() {
 
       {/* Consommation d'aliment */}
       <div className="bg-white rounded-2xl border border-slate-200 p-6 mb-6">
-        <div className="flex items-center gap-2 mb-4">
-          <ShoppingBag className="w-5 h-5 text-orange-500" />
-          <h2 className="text-sm font-bold text-slate-700 uppercase tracking-wider">Consommation d'aliment</h2>
+        <div className="flex items-center justify-between gap-2 mb-4">
+          <div className="flex items-center gap-2">
+            <ShoppingBag className="w-5 h-5 text-orange-500" />
+            <h2 className="text-sm font-bold text-slate-700 uppercase tracking-wider">Consommation d'aliment</h2>
+          </div>
+          {(feedByProductList.length > 0 || totalFeedFromDailyRecords > 0) && (
+            <button
+              onClick={() => setShowClearFeedConfirm(true)}
+              className="flex items-center gap-1.5 text-xs font-medium text-red-600 hover:text-red-700 border border-red-200 hover:border-red-300 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg transition-colors"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              Vider l'historique
+            </button>
+          )}
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
@@ -1033,6 +1067,44 @@ export default function BatchDetail() {
           batchName={batch.name}
           onClose={() => setIsConsomModalOpen(false)}
         />
+      )}
+
+      {showClearFeedConfirm && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center shrink-0">
+                <Trash2 className="w-5 h-5 text-red-600" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-slate-900">Vider l'historique de consommation</h3>
+                <p className="text-xs text-slate-500 mt-0.5">Lot : {batch?.name}</p>
+              </div>
+            </div>
+            <p className="text-sm text-slate-600 mb-1">
+              Cette action supprimera définitivement tous les mouvements de stock (sorties) liés à ce lot.
+            </p>
+            <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-5">
+              ⚠️ Les quantités de stock ne seront pas restaurées — cet historique ne peut pas être récupéré.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setShowClearFeedConfirm(false)}
+                disabled={clearFeedMutation.isPending}
+                className="px-4 py-2 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 font-medium text-sm"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={() => clearFeedMutation.mutate()}
+                disabled={clearFeedMutation.isPending}
+                className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-medium text-sm disabled:opacity-50"
+              >
+                {clearFeedMutation.isPending ? "Suppression..." : "Vider l'historique"}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </AppLayout>
   );
