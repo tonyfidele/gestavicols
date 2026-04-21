@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { randomUUID } from "crypto";
-import { eq, and, isNull, count, sum } from "drizzle-orm";
+import { eq, and, isNull, count, sum, sql } from "drizzle-orm";
 import { db } from "@workspace/db";
 import { salesTable, batchesTable, customersTable } from "@workspace/db";
 import {
@@ -99,6 +99,13 @@ router.post(
       })
       .returning();
 
+    if (sale.batchId) {
+      await db
+        .update(batchesTable)
+        .set({ currentCount: sql`${batchesTable.currentCount} - ${sale.quantity}` })
+        .where(eq(batchesTable.id, sale.batchId));
+    }
+
     await logAudit(user, "CREATE_SALE", "SALE", sale.id, `Sale to ${sale.buyerName} for ${totalAmount}`);
 
     res.status(201).json({ ...sale, batchName: null });
@@ -114,11 +121,31 @@ router.put(
     const user = req.user!;
     const parsed = CreateSaleBody.safeParse(req.body);
     if (!parsed.success) { res.status(400).json({ message: parsed.error.message }); return; }
+
     const conditions = [eq(salesTable.id, saleId), isNull(salesTable.deletedAt)];
     if (user.role !== "SUPER_ADMIN") conditions.push(eq(salesTable.tenantId, user.tenantId));
+
+    const [existing] = await db.select().from(salesTable).where(and(...conditions));
+    if (!existing) { res.status(404).json({ message: "Vente introuvable" }); return; }
+
     const totalAmount = parsed.data.quantity * parsed.data.unitPrice;
-    const [updated] = await db.update(salesTable).set({ ...parsed.data, totalAmount }).where(and(...conditions)).returning();
+    const [updated] = await db
+      .update(salesTable)
+      .set({ ...parsed.data, totalAmount })
+      .where(and(...conditions))
+      .returning();
     if (!updated) { res.status(404).json({ message: "Vente introuvable" }); return; }
+
+    if (existing.batchId) {
+      const quantityDiff = parsed.data.quantity - existing.quantity;
+      if (quantityDiff !== 0) {
+        await db
+          .update(batchesTable)
+          .set({ currentCount: sql`${batchesTable.currentCount} - ${quantityDiff}` })
+          .where(eq(batchesTable.id, existing.batchId));
+      }
+    }
+
     await logAudit(user, "UPDATE_SALE", "SALE", updated.id);
     res.json({ ...updated, batchName: null });
   }
@@ -133,8 +160,24 @@ router.delete(
     const user = req.user!;
     const conditions = [eq(salesTable.id, saleId), isNull(salesTable.deletedAt)];
     if (user.role !== "SUPER_ADMIN") conditions.push(eq(salesTable.tenantId, user.tenantId));
-    const [deleted] = await db.update(salesTable).set({ deletedAt: new Date() }).where(and(...conditions)).returning();
+
+    const [existing] = await db.select().from(salesTable).where(and(...conditions));
+    if (!existing) { res.status(404).json({ message: "Vente introuvable" }); return; }
+
+    const [deleted] = await db
+      .update(salesTable)
+      .set({ deletedAt: new Date() })
+      .where(and(...conditions))
+      .returning();
     if (!deleted) { res.status(404).json({ message: "Vente introuvable" }); return; }
+
+    if (existing.batchId) {
+      await db
+        .update(batchesTable)
+        .set({ currentCount: sql`${batchesTable.currentCount} + ${existing.quantity}` })
+        .where(eq(batchesTable.id, existing.batchId));
+    }
+
     await logAudit(user, "DELETE_SALE", "SALE", deleted.id);
     res.json({ message: "Vente supprimée" });
   }
