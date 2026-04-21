@@ -216,6 +216,12 @@ router.put(
       return;
     }
 
+    if (parsed.data.initialCount !== undefined) {
+      await recalcBatchCurrentCount(updated.id);
+      const [recalculated] = await db.select().from(batchesTable).where(eq(batchesTable.id, updated.id));
+      if (recalculated) Object.assign(updated, recalculated);
+    }
+
     await logAudit(user, "UPDATE_BATCH", "BATCH", updated.id);
 
     const [farm] = await db.select({ name: farmsTable.name }).from(farmsTable).where(eq(farmsTable.id, updated.farmId));

@@ -13,6 +13,7 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
+import { useAuth } from "@/lib/auth-context";
 
 type EggRecord = {
   id: string;
@@ -48,6 +49,8 @@ export default function Eggs() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editRecord, setEditRecord] = useState<EggRecord | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const { user } = useAuth();
+  const canWrite = user?.permissions?.includes("BATCH:CREATE") ?? false;
 
   const { data: eggsData, isLoading, refetch } = useListEggProductions({ limit: 100 });
   const deleteMutation = useDeleteEggProduction();
@@ -160,12 +163,14 @@ export default function Eggs() {
           >
             <FileSpreadsheet className="w-5 h-5" /> Exporter Excel
           </button>
-          <button
-            onClick={() => { setEditRecord(null); setIsModalOpen(true); }}
-            className="flex items-center gap-2 bg-primary hover:bg-emerald-600 text-white px-4 py-2.5 rounded-xl font-medium shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5"
-          >
-            <Plus className="w-5 h-5" /> Enregistrer collecte
-          </button>
+          {canWrite && (
+            <button
+              onClick={() => { setEditRecord(null); setIsModalOpen(true); }}
+              className="flex items-center gap-2 bg-primary hover:bg-emerald-600 text-white px-4 py-2.5 rounded-xl font-medium shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5"
+            >
+              <Plus className="w-5 h-5" /> Enregistrer collecte
+            </button>
+          )}
         </div>
       </div>
 
@@ -212,7 +217,7 @@ export default function Eggs() {
                   <th className="px-5 py-4 font-semibold text-amber-600">Stock</th>
                   <th className="px-5 py-4 font-semibold">Caisses</th>
                   <th className="px-5 py-4 font-semibold text-purple-600">Montant caisse</th>
-                  <th className="px-5 py-4 font-semibold text-right">Actions</th>
+                  {canWrite && <th className="px-5 py-4 font-semibold text-right">Actions</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -232,24 +237,26 @@ export default function Eggs() {
                       <td className="px-5 py-4 font-semibold text-purple-700">
                         {record.caisseAmount > 0 ? fmtFcfa(record.caisseAmount) : "—"}
                       </td>
-                      <td className="px-5 py-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <button
-                            onClick={() => { setEditRecord(record as EggRecord); setIsModalOpen(true); }}
-                            className="p-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
-                            title="Modifier"
-                          >
-                            <Pencil className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => setDeleteTarget(record.id)}
-                            className="p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
-                            title="Supprimer"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </td>
+                      {canWrite && (
+                        <td className="px-5 py-4 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              onClick={() => { setEditRecord(record as EggRecord); setIsModalOpen(true); }}
+                              className="p-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
+                              title="Modifier"
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => setDeleteTarget(record.id)}
+                              className="p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
+                              title="Supprimer"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      )}
                     </tr>
                   );
                 })}

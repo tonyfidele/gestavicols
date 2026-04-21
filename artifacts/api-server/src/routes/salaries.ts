@@ -29,7 +29,8 @@ router.get(
     const yearFilter = query.success ? query.data.year : undefined;
     const user = req.user!;
 
-    const conditions = [eq(salariesTable.tenantId, user.tenantId)];
+    const conditions: ReturnType<typeof eq>[] = [];
+    if (user.role !== "SUPER_ADMIN") conditions.push(eq(salariesTable.tenantId, user.tenantId));
     if (monthFilter) conditions.push(eq(salariesTable.month, monthFilter));
     if (yearFilter) conditions.push(eq(salariesTable.year, yearFilter));
 

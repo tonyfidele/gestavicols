@@ -50,7 +50,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     {
       label: "Finances & RH",
       items: [
-        { name: "Dépenses", href: "/expenses", icon: CreditCard, roles: ["SUPER_ADMIN", "ADMIN", "COMPTABLE"] },
+        { name: "Dépenses", href: "/expenses", icon: CreditCard, roles: ["SUPER_ADMIN", "ADMIN", "COMPTABLE", "CHEF_FERME"] },
         { name: "RH & Salaires", href: "/hr", icon: UserCheck, roles: ["SUPER_ADMIN", "ADMIN", "COMPTABLE"] },
         { name: "Analytics", href: "/analytics", icon: BarChart3, roles: ["SUPER_ADMIN", "ADMIN", "COMPTABLE"] },
       ],

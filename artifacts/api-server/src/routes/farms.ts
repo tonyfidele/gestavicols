@@ -239,12 +239,26 @@ router.put(
 
     await logAudit(user, "UPDATE_FARM", "FARM", updated.id);
 
+    const [manager] = updated.managerId
+      ? await db.select({ name: usersTable.name }).from(usersTable).where(eq(usersTable.id, updated.managerId))
+      : [null];
+
+    const [bldCount] = await db
+      .select({ count: count() })
+      .from(buildingsTable)
+      .where(and(eq(buildingsTable.farmId, updated.id), isNull(buildingsTable.deletedAt)));
+
+    const [batchCount] = await db
+      .select({ count: count() })
+      .from(batchesTable)
+      .where(and(eq(batchesTable.farmId, updated.id), ne(batchesTable.status, "TERMINE"), isNull(batchesTable.deletedAt)));
+
     res.json(
       UpdateFarmResponse.parse({
         ...updated,
-        managerName: null,
-        buildingsCount: 0,
-        activeBatchesCount: 0,
+        managerName: manager?.name || null,
+        buildingsCount: bldCount?.count ?? 0,
+        activeBatchesCount: batchCount?.count ?? 0,
       })
     );
   }

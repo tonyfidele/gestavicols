@@ -20,7 +20,10 @@ export default function Login() {
     try {
       const response = await loginMutation.mutateAsync({ data: { email, password } });
       login(response.token);
-      setLocation("/dashboard");
+      const role = response.user?.role;
+      if (role === "OUVRIER") setLocation("/batches");
+      else if (role === "VETERINAIRE") setLocation("/veterinary");
+      else setLocation("/dashboard");
     } catch (err: any) {
       setError(err?.message || "Identifiants invalides");
     }

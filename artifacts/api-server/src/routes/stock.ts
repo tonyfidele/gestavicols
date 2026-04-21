@@ -139,7 +139,7 @@ router.get(
     const { stockItemId, batchId, page, limit } = query.data;
     const offset = (page - 1) * limit;
 
-    const conditions = [eq(stockMovementsTable.tenantId, user.tenantId)];
+    const conditions: ReturnType<typeof eq>[] = [];
     if (user.role !== "SUPER_ADMIN") conditions.push(eq(stockMovementsTable.tenantId, user.tenantId));
     if (stockItemId) conditions.push(eq(stockMovementsTable.stockItemId, stockItemId));
     if (batchId) conditions.push(eq(stockMovementsTable.batchId, batchId));
