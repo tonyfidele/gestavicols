@@ -1,12 +1,12 @@
 import React, { useState } from "react";
 import { AppLayout } from "@/components/layout/app-layout";
 import { useListSalaries, useCreateSalary, useUpdateSalary, useDeleteSalary, useListUsers } from "@workspace/api-client-react";
-import { Users, Plus, Loader2, DollarSign, CheckCircle, Clock, XCircle, Trash2 } from "lucide-react";
+import { Users, Plus, Loader2, DollarSign, CheckCircle, Clock, XCircle, Trash2, FileDown } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { ExportMenu } from "@/components/ui/export-menu";
-import { exportToExcel, exportToPDF } from "@/lib/export";
+import { exportToExcel, exportToPDF, downloadPaySlip } from "@/lib/export";
 
 const MONTHS = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
 
@@ -352,6 +352,25 @@ export default function HR() {
                             Marquer payé
                           </button>
                         )}
+                        <button
+                          onClick={() => downloadPaySlip({
+                            userName: salary.userName ?? "—",
+                            userRole: salary.userRole ?? "—",
+                            month: salary.month ?? selectedMonth,
+                            year: salary.year ?? selectedYear,
+                            baseSalary: salary.baseSalary ?? 0,
+                            bonuses: salary.bonuses ?? 0,
+                            deductions: salary.deductions ?? 0,
+                            netSalary: salary.netSalary ?? 0,
+                            paymentStatus: salary.paymentStatus ?? "EN_ATTENTE",
+                            paymentDate: salary.paymentDate,
+                            notes: salary.notes,
+                          })}
+                          className="p-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
+                          title="Télécharger la fiche de paie"
+                        >
+                          <FileDown className="w-4 h-4" />
+                        </button>
                         <button
                           onClick={() => setDeleteTarget(salary.id)}
                           className="p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
