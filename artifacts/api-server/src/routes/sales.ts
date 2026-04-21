@@ -1,8 +1,9 @@
 import { Router, type IRouter } from "express";
 import { randomUUID } from "crypto";
-import { eq, and, isNull, count, sum, sql } from "drizzle-orm";
+import { eq, and, isNull, count, sum } from "drizzle-orm";
 import { db } from "@workspace/db";
 import { salesTable, batchesTable, customersTable } from "@workspace/db";
+import { recalcBatchCurrentCount } from "../lib/batch-utils";
 import {
   ListSalesQueryParams,
   ListSalesResponse,
@@ -100,10 +101,7 @@ router.post(
       .returning();
 
     if (sale.batchId) {
-      await db
-        .update(batchesTable)
-        .set({ currentCount: sql`${batchesTable.currentCount} - ${sale.quantity}` })
-        .where(eq(batchesTable.id, sale.batchId));
+      await recalcBatchCurrentCount(sale.batchId);
     }
 
     await logAudit(user, "CREATE_SALE", "SALE", sale.id, `Sale to ${sale.buyerName} for ${totalAmount}`);
@@ -137,13 +135,7 @@ router.put(
     if (!updated) { res.status(404).json({ message: "Vente introuvable" }); return; }
 
     if (existing.batchId) {
-      const quantityDiff = parsed.data.quantity - existing.quantity;
-      if (quantityDiff !== 0) {
-        await db
-          .update(batchesTable)
-          .set({ currentCount: sql`${batchesTable.currentCount} - ${quantityDiff}` })
-          .where(eq(batchesTable.id, existing.batchId));
-      }
+      await recalcBatchCurrentCount(existing.batchId);
     }
 
     await logAudit(user, "UPDATE_SALE", "SALE", updated.id);
@@ -172,10 +164,7 @@ router.delete(
     if (!deleted) { res.status(404).json({ message: "Vente introuvable" }); return; }
 
     if (existing.batchId) {
-      await db
-        .update(batchesTable)
-        .set({ currentCount: sql`${batchesTable.currentCount} + ${existing.quantity}` })
-        .where(eq(batchesTable.id, existing.batchId));
+      await recalcBatchCurrentCount(existing.batchId);
     }
 
     await logAudit(user, "DELETE_SALE", "SALE", deleted.id);

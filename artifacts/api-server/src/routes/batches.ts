@@ -2,6 +2,7 @@ import { Router, type IRouter } from "express";
 import { randomUUID } from "crypto";
 import { eq, and, isNull, count, sql, sum } from "drizzle-orm";
 import { db } from "@workspace/db";
+import { recalcBatchCurrentCount } from "../lib/batch-utils";
 import {
   batchesTable,
   farmsTable,
@@ -323,31 +324,13 @@ router.post(
       })
       .returning();
 
-    const newCount = Math.max(0, batch.currentCount - (parsed.data.mortality || 0));
-    const mortalityRate = batch.initialCount > 0
-      ? ((batch.initialCount - newCount) / batch.initialCount) * 100
-      : 0;
-
-    await db
-      .update(batchesTable)
-      .set({ currentCount: newCount, mortalityRate })
-      .where(eq(batchesTable.id, params.data.batchId));
-
+    await recalcBatchCurrentCount(params.data.batchId);
     await logAudit(user, "CREATE_DAILY_RECORD", "DAILY_RECORD", record.id);
 
     res.status(201).json({ ...record, recordedBy: user.name });
   }
 );
 
-async function recalcBatchCount(batchId: string) {
-  const [batch] = await db.select({ initialCount: batchesTable.initialCount }).from(batchesTable).where(eq(batchesTable.id, batchId));
-  if (!batch) return;
-  const [agg] = await db.select({ total: sum(dailyRecordsTable.mortality) }).from(dailyRecordsTable).where(eq(dailyRecordsTable.batchId, batchId));
-  const totalMortality = Number(agg?.total ?? 0);
-  const newCount = Math.max(0, batch.initialCount - totalMortality);
-  const mortalityRate = batch.initialCount > 0 ? (totalMortality / batch.initialCount) * 100 : 0;
-  await db.update(batchesTable).set({ currentCount: newCount, mortalityRate }).where(eq(batchesTable.id, batchId));
-}
 
 router.put(
   "/batches/:batchId/daily-records/:recordId",
@@ -371,7 +354,7 @@ router.put(
       .where(and(...conds))
       .returning();
 
-    await recalcBatchCount(existing.batchId);
+    await recalcBatchCurrentCount(existing.batchId);
     await logAudit(user, "UPDATE_DAILY_RECORD", "DAILY_RECORD", updated.id);
     res.json({ ...updated, recordedBy: user.name });
   }
@@ -392,7 +375,7 @@ router.delete(
     if (!existing) { res.status(404).json({ message: "Daily record not found" }); return; }
 
     await db.delete(dailyRecordsTable).where(and(...conds));
-    await recalcBatchCount(existing.batchId);
+    await recalcBatchCurrentCount(existing.batchId);
     await logAudit(user, "DELETE_DAILY_RECORD", "DAILY_RECORD", params.data.recordId);
     res.json({ message: "Daily record deleted" });
   }
