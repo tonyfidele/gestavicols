@@ -9,7 +9,18 @@ import { toast } from "sonner";
 import { ExportMenu } from "@/components/ui/export-menu";
 import { exportToExcel, exportToPDF } from "@/lib/export";
 
-const CATEGORIES = ["ALIMENTS", "MEDICAMENTS", "ENERGIE", "MAIN_OEUVRE", "EQUIPEMENT", "TRANSPORT", "AUTRE"];
+const CATEGORIES = [
+  "ALIMENTS",
+  "MEDICAMENTS",
+  "SALAIRES",
+  "VETERINAIRE",
+  "MAINTENANCE",
+  "ENERGIE",
+  "MAIN_OEUVRE",
+  "EQUIPEMENT",
+  "TRANSPORT",
+  "AUTRE",
+];
 
 type Expense = {
   id: string;

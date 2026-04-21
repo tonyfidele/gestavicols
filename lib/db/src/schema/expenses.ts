@@ -5,7 +5,7 @@ import { tenantsTable } from "./tenants";
 import { batchesTable } from "./batches";
 import { farmsTable } from "./farms";
 
-export const expenseCategoryEnum = pgEnum("expense_category", ["ALIMENTS", "SALAIRES", "VETERINAIRE", "MAINTENANCE", "TRANSPORT", "ENERGIE", "MAIN_OEUVRE", "EQUIPEMENT", "AUTRE"]);
+export const expenseCategoryEnum = pgEnum("expense_category", ["ALIMENTS", "MEDICAMENTS", "SALAIRES", "VETERINAIRE", "MAINTENANCE", "TRANSPORT", "ENERGIE", "MAIN_OEUVRE", "EQUIPEMENT", "AUTRE"]);
 
 export const expensesTable = pgTable("expenses", {
   id: text("id").primaryKey(),
