@@ -44,7 +44,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         { name: "Ventes", href: "/sales", icon: DollarSign, roles: ["SUPER_ADMIN", "ADMIN", "COMPTABLE", "CHEF_FERME"] },
         { name: "Clients", href: "/customers", icon: UsersRound, roles: ["SUPER_ADMIN", "ADMIN", "COMPTABLE", "CHEF_FERME"] },
         { name: "Stock", href: "/stock", icon: Package, roles: ["SUPER_ADMIN", "ADMIN", "CHEF_FERME"] },
-        { name: "Production d'Œufs", href: "/eggs", icon: Egg, roles: ["SUPER_ADMIN", "ADMIN", "CHEF_FERME", "OUVRIER"] },
+        { name: "Production d'Œufs", href: "/eggs", icon: Egg, roles: ["SUPER_ADMIN", "ADMIN", "CHEF_FERME", "OUVRIER", "COMPTABLE"] },
       ],
     },
     {
