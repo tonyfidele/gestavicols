@@ -204,6 +204,7 @@ export default function HR() {
     { header: "Retenues (FCFA)", key: "deductions", width: 16 },
     { header: "Net (FCFA)", key: "netSalary", width: 15 },
     { header: "Statut", key: "paymentStatus", width: 12 },
+    { header: "Date de paiement", key: "paymentDate", width: 18 },
   ];
 
   const getHrExportRows = () =>
@@ -216,6 +217,7 @@ export default function HR() {
       deductions: s.deductions ?? 0,
       netSalary: s.netSalary ?? 0,
       paymentStatus: s.paymentStatus === "PAYE" ? "Payé" : s.paymentStatus === "EN_ATTENTE" ? "En attente" : "Annulé",
+      paymentDate: s.paymentDate ? format(new Date(s.paymentDate), "d MMM yyyy", { locale: fr }) : "—",
     }));
 
   const handleHrExcel = () => exportToExcel("rapport_rh", "Salaires", HR_COLS, getHrExportRows());
@@ -314,6 +316,7 @@ export default function HR() {
                   <th className="px-6 py-4 font-semibold">Retenues</th>
                   <th className="px-6 py-4 font-semibold">Net</th>
                   <th className="px-6 py-4 font-semibold">Statut</th>
+                  <th className="px-6 py-4 font-semibold">Date de paiement</th>
                   <th className="px-6 py-4 font-semibold text-right">Action</th>
                 </tr>
               </thead>
@@ -334,6 +337,11 @@ export default function HR() {
                     <td className="px-6 py-4 text-red-500">-{(salary.deductions ?? 0).toLocaleString("fr-ML")}</td>
                     <td className="px-6 py-4 font-bold text-slate-900">{(salary.netSalary ?? 0).toLocaleString("fr-ML")} FCFA</td>
                     <td className="px-6 py-4">{statusBadge(salary.paymentStatus)}</td>
+                    <td className="px-6 py-4 text-sm text-slate-600">
+                      {salary.paymentDate
+                        ? format(new Date(salary.paymentDate), "d MMM yyyy", { locale: fr })
+                        : <span className="text-slate-300">—</span>}
+                    </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
                         {salary.paymentStatus === "EN_ATTENTE" && (
