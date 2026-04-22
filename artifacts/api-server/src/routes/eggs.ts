@@ -14,7 +14,7 @@ const CreateEggProductionBody = z.object({
   eggsCollected: z.number().int().min(0),
   brokenEggs: z.number().int().min(0).default(0),
   soldEggs: z.number().int().min(0).default(0),
-  stockEggs: z.number().int().min(0).default(0),
+  stockEggs: z.number().int().default(0),
   cratesCount: z.number().min(0).default(0),
   unitPrice: z.number().min(0).default(0),
   caisseAmount: z.number().min(0).default(0),
