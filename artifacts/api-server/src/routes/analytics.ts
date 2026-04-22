@@ -120,6 +120,21 @@ router.get(
       .where(and(...farmExpenseConditions))
       .groupBy(expensesTable.farmId);
 
+    const farmMortalityConditions = [
+      gte(dailyRecordsTable.date, startDate),
+      lte(dailyRecordsTable.date, endDate),
+      ...(user.role !== "SUPER_ADMIN" ? [eq(dailyRecordsTable.tenantId, user.tenantId)] : []),
+    ];
+    const mortalityByFarm = await db
+      .select({
+        farmId: batchesTable.farmId,
+        totalMortality: sum(dailyRecordsTable.mortality),
+      })
+      .from(dailyRecordsTable)
+      .innerJoin(batchesTable, eq(dailyRecordsTable.batchId, batchesTable.id))
+      .where(and(...farmMortalityConditions))
+      .groupBy(batchesTable.farmId);
+
     const monthlySales = await db
       .select({
         month: sql<string>`to_char(${salesTable.saleDate}::date, 'YYYY-MM')`,
@@ -172,9 +187,11 @@ router.get(
       farmPerformance: farmPerformance.map(f => {
         const rev = revenueByFarm.find(r => r.farmId === f.farmId);
         const exp = expensesByFarm.find(e => e.farmId === f.farmId);
+        const mort = mortalityByFarm.find(m => m.farmId === f.farmId);
         const revenue = Number(rev?.revenue) || 0;
         const expenses = Number(exp?.expenses) || 0;
         const totalSold = Number(rev?.totalSold) || 0;
+        const totalMortality = Number(mort?.totalMortality) || 0;
         return {
           farmId: f.farmId,
           farmName: f.farmName,
@@ -186,6 +203,7 @@ router.get(
           expenses,
           netProfit: revenue - expenses,
           totalSold,
+          totalMortality,
         };
       }),
       monthlySales: monthlySales.map(m => ({

@@ -561,6 +561,7 @@ export interface FarmPerformanceItem {
   expenses: number;
   netProfit: number;
   totalSold: number;
+  totalMortality: number;
 }
 
 export interface MonthlySalesItem {

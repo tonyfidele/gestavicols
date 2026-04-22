@@ -384,7 +384,11 @@ export default function Analytics() {
                                 <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${farm.isActive === false ? "bg-slate-100 text-slate-500" : "bg-emerald-100 text-emerald-700"}`}>
                                   {farm.isActive === false ? "Désactivée" : "Active"}
                                 </span>
-                                <span className="text-xs text-slate-500">{farm.activeBatches} lots · {farm.totalAnimals.toLocaleString()} animaux · <span className="text-orange-600 font-medium">{(farm.totalSold ?? 0).toLocaleString()} vendus</span></span>
+                                <span className="text-xs text-slate-500">
+                                  {farm.activeBatches} lots · {farm.totalAnimals.toLocaleString()} animaux
+                                  {" · "}<span className="text-orange-600 font-medium">{(farm.totalSold ?? 0).toLocaleString()} vendus</span>
+                                  {" · "}<span className={(farm.totalMortality ?? 0) > 0 ? "text-red-600 font-medium" : "text-slate-400"}>{(farm.totalMortality ?? 0).toLocaleString()} morts</span>
+                                </span>
                               </div>
                             </div>
                           </div>
@@ -403,10 +407,10 @@ export default function Analytics() {
                               <p className={`font-bold ${isProfit ? "text-blue-700" : "text-orange-700"}`}>{isProfit ? "+" : ""}{formatCurrency(profit)}</p>
                             </div>
                           </div>
-                          {/* Mortality */}
+                          {/* Mortality rate */}
                           {farm.avgMortality > 0 && (
                             <p className={`text-xs mt-2 font-medium ${farm.avgMortality > 5 ? "text-red-600" : "text-amber-600"}`}>
-                              ⚠ Mortalité moy. {farm.avgMortality.toFixed(1)}%
+                              ⚠ Taux de mortalité moy. {farm.avgMortality.toFixed(1)}% sur la période
                             </p>
                           )}
                         </div>

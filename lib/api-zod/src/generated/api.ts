@@ -1282,6 +1282,7 @@ export const GetAnalyticsResponse = zod.object({
       expenses: zod.number(),
       netProfit: zod.number(),
       totalSold: zod.number(),
+      totalMortality: zod.number(),
     }),
   ),
   monthlySales: zod.array(
