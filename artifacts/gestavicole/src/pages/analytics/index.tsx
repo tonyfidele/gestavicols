@@ -374,30 +374,22 @@ export default function Analytics() {
                       return (
                         <div key={farm.farmId} className={`border rounded-xl p-4 ${farm.isActive === false ? "bg-slate-50 border-slate-200 opacity-75" : "bg-white border-slate-200"}`}>
                           {/* Header row */}
-                          <div className="flex items-center justify-between mb-3">
-                            <div className="flex items-center gap-2">
-                              <div className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-bold" style={{ backgroundColor: COLORS[i % COLORS.length] }}>
-                                {i + 1}
-                              </div>
-                              <div>
-                                <p className="font-bold text-slate-900 text-sm">{farm.farmName}</p>
-                                <div className="flex items-center gap-2 mt-0.5">
-                                  <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${farm.isActive === false ? "bg-slate-100 text-slate-500" : "bg-emerald-100 text-emerald-700"}`}>
-                                    {farm.isActive === false ? "Désactivée" : "Active"}
-                                  </span>
-                                  <span className="text-xs text-slate-500">{farm.activeBatches} lots · {farm.totalAnimals.toLocaleString()} animaux</span>
-                                </div>
-                              </div>
+                          <div className="flex items-center gap-2 mb-3">
+                            <div className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-bold shrink-0" style={{ backgroundColor: COLORS[i % COLORS.length] }}>
+                              {i + 1}
                             </div>
-                            <div className={`text-right`}>
-                              <p className={`text-sm font-bold ${isProfit ? "text-emerald-600" : "text-red-600"}`}>
-                                {isProfit ? "+" : ""}{formatCurrency(profit)}
-                              </p>
-                              <p className="text-xs text-slate-500">Bénéfice net</p>
+                            <div>
+                              <p className="font-bold text-slate-900 text-sm">{farm.farmName}</p>
+                              <div className="flex items-center gap-2 mt-0.5">
+                                <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${farm.isActive === false ? "bg-slate-100 text-slate-500" : "bg-emerald-100 text-emerald-700"}`}>
+                                  {farm.isActive === false ? "Désactivée" : "Active"}
+                                </span>
+                                <span className="text-xs text-slate-500">{farm.activeBatches} lots · {farm.totalAnimals.toLocaleString()} animaux</span>
+                              </div>
                             </div>
                           </div>
-                          {/* Revenue / Expenses grid */}
-                          <div className="grid grid-cols-2 gap-2 text-sm">
+                          {/* Revenue / Expenses / Profit grid */}
+                          <div className="grid grid-cols-3 gap-2 text-sm">
                             <div className="bg-emerald-50 rounded-lg px-3 py-2">
                               <p className="text-xs text-emerald-700 font-medium">Revenus</p>
                               <p className="font-bold text-emerald-700">{formatCurrency(farm.revenue)}</p>
@@ -405,6 +397,10 @@ export default function Analytics() {
                             <div className="bg-red-50 rounded-lg px-3 py-2">
                               <p className="text-xs text-red-700 font-medium">Dépenses</p>
                               <p className="font-bold text-red-700">{formatCurrency(farm.expenses)}</p>
+                            </div>
+                            <div className={`rounded-lg px-3 py-2 ${isProfit ? "bg-blue-50" : "bg-orange-50"}`}>
+                              <p className={`text-xs font-medium ${isProfit ? "text-blue-700" : "text-orange-700"}`}>Bénéfice net</p>
+                              <p className={`font-bold ${isProfit ? "text-blue-700" : "text-orange-700"}`}>{isProfit ? "+" : ""}{formatCurrency(profit)}</p>
                             </div>
                           </div>
                           {/* Mortality */}
