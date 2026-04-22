@@ -391,6 +391,7 @@ export interface DashboardStats {
   activeBatches: number;
   totalAnimals: number;
   totalAnimalsSold: number;
+  totalAnimalsRemaining: number;
   monthlyRevenue: number;
   monthlyExpenses: number;
   netProfit: number;
