@@ -1199,13 +1199,15 @@ export const ListEggProductionsResponse = zod.object({
  */
 export const CreateEggProductionBody = zod.object({
   batchId: zod.string(),
-  farmId: zod.string(),
+  farmId: zod.string().optional(),
   date: zod.string(),
   eggsCollected: zod.number(),
   brokenEggs: zod.number().optional(),
   soldEggs: zod.number().optional(),
   stockEggs: zod.number().optional(),
   cratesCount: zod.number().optional(),
+  unitPrice: zod.number().optional(),
+  caisseAmount: zod.number().optional(),
   notes: zod.string().optional(),
 });
 
@@ -1218,13 +1220,15 @@ export const UpdateEggProductionParams = zod.object({
 
 export const UpdateEggProductionBody = zod.object({
   batchId: zod.string(),
-  farmId: zod.string(),
+  farmId: zod.string().optional(),
   date: zod.string(),
   eggsCollected: zod.number(),
   brokenEggs: zod.number().optional(),
   soldEggs: zod.number().optional(),
   stockEggs: zod.number().optional(),
   cratesCount: zod.number().optional(),
+  unitPrice: zod.number().optional(),
+  caisseAmount: zod.number().optional(),
   notes: zod.string().optional(),
 });
 

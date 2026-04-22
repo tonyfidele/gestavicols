@@ -631,13 +631,15 @@ export interface EggProduction {
 
 export interface CreateEggProductionRequest {
   batchId: string;
-  farmId: string;
+  farmId?: string;
   date: string;
   eggsCollected: number;
   brokenEggs?: number;
   soldEggs?: number;
   stockEggs?: number;
   cratesCount?: number;
+  unitPrice?: number;
+  caisseAmount?: number;
   notes?: string;
 }
 
