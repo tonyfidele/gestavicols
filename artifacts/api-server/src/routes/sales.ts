@@ -90,9 +90,11 @@ router.post(
     const user = req.user!;
     const totalAmount = parsed.data.quantity * parsed.data.unitPrice;
 
+    let farmId: string | null = null;
+
     if (parsed.data.batchId) {
       const [batch] = await db
-        .select({ currentCount: batchesTable.currentCount, status: batchesTable.status })
+        .select({ currentCount: batchesTable.currentCount, status: batchesTable.status, farmId: batchesTable.farmId })
         .from(batchesTable)
         .where(and(eq(batchesTable.id, parsed.data.batchId), isNull(batchesTable.deletedAt)));
 
@@ -110,6 +112,7 @@ router.post(
         });
         return;
       }
+      farmId = batch.farmId;
     }
 
     const [sale] = await db
@@ -118,6 +121,7 @@ router.post(
         id: randomUUID(),
         tenantId: user.tenantId,
         totalAmount,
+        farmId,
         ...parsed.data,
       })
       .returning();
