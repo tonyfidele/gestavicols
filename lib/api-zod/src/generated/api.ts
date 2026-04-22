@@ -1274,9 +1274,13 @@ export const GetAnalyticsResponse = zod.object({
     zod.object({
       farmId: zod.string(),
       farmName: zod.string(),
+      isActive: zod.boolean().optional(),
       activeBatches: zod.number(),
       totalAnimals: zod.number(),
       avgMortality: zod.number(),
+      revenue: zod.number(),
+      expenses: zod.number(),
+      netProfit: zod.number(),
     }),
   ),
   monthlySales: zod.array(

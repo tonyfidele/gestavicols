@@ -67,6 +67,7 @@ router.get(
       .select({
         farmId: farmsTable.id,
         farmName: farmsTable.name,
+        isActive: farmsTable.isActive,
         activeBatches: count(batchesTable.id),
         totalAnimals: sql<number>`coalesce(sum(${batchesTable.currentCount}), 0)`,
         avgMortality: sql<number>`coalesce(avg(${batchesTable.mortalityRate}), 0)`,
@@ -85,8 +86,38 @@ router.get(
           isNull(farmsTable.deletedAt)
         )
       )
-      .groupBy(farmsTable.id, farmsTable.name)
-      .limit(10);
+      .groupBy(farmsTable.id, farmsTable.name, farmsTable.isActive)
+      .limit(20);
+
+    const farmRevenueConditions = [
+      isNull(salesTable.deletedAt),
+      gte(salesTable.saleDate, startDate),
+      lte(salesTable.saleDate, endDate),
+      ...(user.role !== "SUPER_ADMIN" ? [eq(salesTable.tenantId, user.tenantId)] : []),
+    ];
+    const revenueByFarm = await db
+      .select({
+        farmId: salesTable.farmId,
+        revenue: sum(salesTable.totalAmount),
+      })
+      .from(salesTable)
+      .where(and(...farmRevenueConditions))
+      .groupBy(salesTable.farmId);
+
+    const farmExpenseConditions = [
+      isNull(expensesTable.deletedAt),
+      gte(expensesTable.date, startDate),
+      lte(expensesTable.date, endDate),
+      ...(user.role !== "SUPER_ADMIN" ? [eq(expensesTable.tenantId, user.tenantId)] : []),
+    ];
+    const expensesByFarm = await db
+      .select({
+        farmId: expensesTable.farmId,
+        expenses: sum(expensesTable.amount),
+      })
+      .from(expensesTable)
+      .where(and(...farmExpenseConditions))
+      .groupBy(expensesTable.farmId);
 
     const monthlySales = await db
       .select({
@@ -137,13 +168,23 @@ router.get(
         totalFeedConsumed: Number(mortalityStats?.totalFeedConsumed) || 0,
         totalEggsCollected: Number(mortalityStats?.totalEggs) || 0,
       },
-      farmPerformance: farmPerformance.map(f => ({
-        farmId: f.farmId,
-        farmName: f.farmName,
-        activeBatches: Number(f.activeBatches),
-        totalAnimals: Number(f.totalAnimals),
-        avgMortality: Math.round(Number(f.avgMortality) * 100) / 100,
-      })),
+      farmPerformance: farmPerformance.map(f => {
+        const rev = revenueByFarm.find(r => r.farmId === f.farmId);
+        const exp = expensesByFarm.find(e => e.farmId === f.farmId);
+        const revenue = Number(rev?.revenue) || 0;
+        const expenses = Number(exp?.expenses) || 0;
+        return {
+          farmId: f.farmId,
+          farmName: f.farmName,
+          isActive: f.isActive,
+          activeBatches: Number(f.activeBatches),
+          totalAnimals: Number(f.totalAnimals),
+          avgMortality: Math.round(Number(f.avgMortality) * 100) / 100,
+          revenue,
+          expenses,
+          netProfit: revenue - expenses,
+        };
+      }),
       monthlySales: monthlySales.map(m => ({
         month: m.month,
         revenue: Number(m.revenue) || 0,

@@ -362,26 +362,60 @@ export default function Analytics() {
 
             {data.farmPerformance.length > 0 && (
               <div className="bg-white rounded-2xl border border-slate-200 p-6">
-                <h2 className="text-lg font-bold text-slate-900 mb-4">Performance par Ferme</h2>
-                <div className="space-y-3">
-                  {data.farmPerformance.map((farm, i) => (
-                    <div key={farm.farmId} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-sm font-bold" style={{ backgroundColor: COLORS[i % COLORS.length] }}>
-                          {i + 1}
+                <h2 className="text-lg font-bold text-slate-900 mb-1">Revenus par Ferme</h2>
+                <p className="text-xs text-slate-500 mb-4">Données pour la période sélectionnée · Les fermes désactivées conservent leurs historiques</p>
+                <div className="space-y-4">
+                  {data.farmPerformance
+                    .slice()
+                    .sort((a, b) => b.revenue - a.revenue)
+                    .map((farm, i) => {
+                      const profit = farm.netProfit;
+                      const isProfit = profit >= 0;
+                      return (
+                        <div key={farm.farmId} className={`border rounded-xl p-4 ${farm.isActive === false ? "bg-slate-50 border-slate-200 opacity-75" : "bg-white border-slate-200"}`}>
+                          {/* Header row */}
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-2">
+                              <div className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-bold" style={{ backgroundColor: COLORS[i % COLORS.length] }}>
+                                {i + 1}
+                              </div>
+                              <div>
+                                <p className="font-bold text-slate-900 text-sm">{farm.farmName}</p>
+                                <div className="flex items-center gap-2 mt-0.5">
+                                  <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${farm.isActive === false ? "bg-slate-100 text-slate-500" : "bg-emerald-100 text-emerald-700"}`}>
+                                    {farm.isActive === false ? "Désactivée" : "Active"}
+                                  </span>
+                                  <span className="text-xs text-slate-500">{farm.activeBatches} lots · {farm.totalAnimals.toLocaleString()} animaux</span>
+                                </div>
+                              </div>
+                            </div>
+                            <div className={`text-right`}>
+                              <p className={`text-sm font-bold ${isProfit ? "text-emerald-600" : "text-red-600"}`}>
+                                {isProfit ? "+" : ""}{formatCurrency(profit)}
+                              </p>
+                              <p className="text-xs text-slate-500">Bénéfice net</p>
+                            </div>
+                          </div>
+                          {/* Revenue / Expenses grid */}
+                          <div className="grid grid-cols-2 gap-2 text-sm">
+                            <div className="bg-emerald-50 rounded-lg px-3 py-2">
+                              <p className="text-xs text-emerald-700 font-medium">Revenus</p>
+                              <p className="font-bold text-emerald-700">{formatCurrency(farm.revenue)}</p>
+                            </div>
+                            <div className="bg-red-50 rounded-lg px-3 py-2">
+                              <p className="text-xs text-red-700 font-medium">Dépenses</p>
+                              <p className="font-bold text-red-700">{formatCurrency(farm.expenses)}</p>
+                            </div>
+                          </div>
+                          {/* Mortality */}
+                          {farm.avgMortality > 0 && (
+                            <p className={`text-xs mt-2 font-medium ${farm.avgMortality > 5 ? "text-red-600" : "text-amber-600"}`}>
+                              ⚠ Mortalité moy. {farm.avgMortality.toFixed(1)}%
+                            </p>
+                          )}
                         </div>
-                        <div>
-                          <p className="font-semibold text-slate-900 text-sm">{farm.farmName}</p>
-                          <p className="text-xs text-slate-500">{farm.activeBatches} lots actifs · {farm.totalAnimals.toLocaleString()} animaux</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <span className={`text-sm font-bold ${farm.avgMortality > 5 ? "text-red-600" : farm.avgMortality > 0 ? "text-amber-600" : "text-emerald-600"}`}>
-                          {farm.avgMortality === 0 ? "0%" : farm.avgMortality < 0.1 ? `${farm.avgMortality.toFixed(2)}%` : `${farm.avgMortality.toFixed(1)}%`} mortalité
-                        </span>
-                      </div>
-                    </div>
-                  ))}
+                      );
+                  })}
                 </div>
               </div>
             )}

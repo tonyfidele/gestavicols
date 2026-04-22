@@ -552,9 +552,13 @@ export interface UpdateSalaryRequest {
 export interface FarmPerformanceItem {
   farmId: string;
   farmName: string;
+  isActive?: boolean;
   activeBatches: number;
   totalAnimals: number;
   avgMortality: number;
+  revenue: number;
+  expenses: number;
+  netProfit: number;
 }
 
 export interface MonthlySalesItem {
