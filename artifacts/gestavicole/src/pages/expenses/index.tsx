@@ -30,6 +30,7 @@ type Expense = {
   date: string;
   batchId?: string;
   farmId?: string;
+  farmName?: string | null;
 };
 
 const EMPTY_FORM = {
@@ -71,15 +72,17 @@ export default function Expenses() {
   };
 
   const COLS = [
-    { header: "Date", key: "date", width: 15 },
-    { header: "Description", key: "description", width: 35 },
-    { header: "Catégorie", key: "category", width: 18 },
-    { header: "Montant (FCFA)", key: "amount", width: 20 },
+    { header: "Date", key: "date", width: 13 },
+    { header: "Ferme", key: "farmName", width: 20 },
+    { header: "Description", key: "description", width: 30 },
+    { header: "Catégorie", key: "category", width: 15 },
+    { header: "Montant (FCFA)", key: "amount", width: 18 },
   ];
 
   const getExportRows = () =>
     (expensesData?.data ?? []).map((e) => ({
       date: format(new Date(e.date), "dd/MM/yyyy"),
+      farmName: (e as Expense).farmName || "—",
       description: e.description,
       category: e.category,
       amount: e.amount,
@@ -126,6 +129,7 @@ export default function Expenses() {
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 text-sm uppercase tracking-wider">
                   <th className="px-6 py-4 font-semibold">Date</th>
+                  <th className="px-6 py-4 font-semibold">Ferme</th>
                   <th className="px-6 py-4 font-semibold">Description</th>
                   <th className="px-6 py-4 font-semibold">Catégorie</th>
                   <th className="px-6 py-4 font-semibold">Montant</th>
@@ -137,6 +141,12 @@ export default function Expenses() {
                   <tr key={expense.id} className="hover:bg-slate-50/50 transition-colors">
                     <td className="px-6 py-4 font-medium text-slate-900">
                       {format(new Date(expense.date), "dd MMM yyyy", { locale: fr })}
+                    </td>
+                    <td className="px-6 py-4">
+                      {(expense as Expense).farmName
+                        ? <span className="px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 text-xs font-semibold">{(expense as Expense).farmName}</span>
+                        : <span className="text-slate-300 text-xs">—</span>
+                      }
                     </td>
                     <td className="px-6 py-4 text-slate-700">{expense.description}</td>
                     <td className="px-6 py-4">

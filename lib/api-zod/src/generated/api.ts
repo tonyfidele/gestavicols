@@ -659,6 +659,7 @@ export const ListExpensesResponse = zod.object({
       date: zod.coerce.date(),
       batchId: zod.string().nullish(),
       farmId: zod.string().nullish(),
+      farmName: zod.string().nullish(),
       tenantId: zod.string(),
       createdAt: zod.coerce.date(),
     }),

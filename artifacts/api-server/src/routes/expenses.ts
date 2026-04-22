@@ -2,7 +2,7 @@ import { Router, type IRouter } from "express";
 import { randomUUID } from "crypto";
 import { eq, and, isNull, count, sum } from "drizzle-orm";
 import { db } from "@workspace/db";
-import { expensesTable } from "@workspace/db";
+import { expensesTable, farmsTable } from "@workspace/db";
 import {
   ListExpensesQueryParams,
   ListExpensesResponse,
@@ -40,9 +40,22 @@ router.get(
       .where(and(...conditions));
 
     const items = await db
-      .select()
+      .select({
+        id: expensesTable.id,
+        category: expensesTable.category,
+        description: expensesTable.description,
+        amount: expensesTable.amount,
+        date: expensesTable.date,
+        batchId: expensesTable.batchId,
+        farmId: expensesTable.farmId,
+        tenantId: expensesTable.tenantId,
+        createdAt: expensesTable.createdAt,
+        farmName: farmsTable.name,
+      })
       .from(expensesTable)
+      .leftJoin(farmsTable, eq(expensesTable.farmId, farmsTable.id))
       .where(and(...conditions))
+      .orderBy(expensesTable.date)
       .limit(limit)
       .offset(offset);
 

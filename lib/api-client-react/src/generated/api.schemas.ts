@@ -325,6 +325,7 @@ export interface Expense {
   date: string;
   batchId?: string | null;
   farmId?: string | null;
+  farmName?: string | null;
   tenantId: string;
   createdAt: string;
 }
