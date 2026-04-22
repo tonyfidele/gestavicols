@@ -68,12 +68,14 @@ export default function Landing() {
             <img src={`${import.meta.env.BASE_URL}images/logo.png`} alt="Logo" className="w-8 h-8 rounded-xl shadow-sm" />
             <span className="font-display font-extrabold text-xl text-emerald-700 tracking-tight">GESTAVICOLE</span>
           </div>
-          <div className="flex items-center gap-3">
-            <Link href="/login" className="text-sm font-medium text-slate-600 hover:text-emerald-700 transition-colors px-3 py-2">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Link href="/login" className="hidden sm:inline-flex text-sm font-medium text-slate-600 hover:text-emerald-700 transition-colors px-3 py-2">
               Se connecter
             </Link>
-            <Link href="/register" className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl shadow-md shadow-emerald-100 transition-all hover:-translate-y-0.5">
-              Commencer <ArrowRight className="w-4 h-4" />
+            <Link href="/register" className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl shadow-md shadow-emerald-100 transition-all hover:-translate-y-0.5 whitespace-nowrap">
+              <span className="hidden sm:inline">Commencer</span>
+              <span className="sm:hidden">Commencer</span>
+              <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
         </div>
