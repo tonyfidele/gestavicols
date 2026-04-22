@@ -82,45 +82,18 @@ export default function Farms() {
                   active ? "border-slate-200 hover:border-primary/30" : "border-slate-200 opacity-70"
                 }`}
               >
-                {/* Toggle active button */}
-                <button
-                  onClick={() => handleToggleActive(farm as Farm)}
-                  disabled={isToggling}
-                  className={`absolute top-4 right-20 p-2 rounded-xl transition-colors opacity-0 group-hover:opacity-100 disabled:opacity-50 ${
-                    active
-                      ? "text-slate-300 hover:text-amber-500 hover:bg-amber-50"
-                      : "text-slate-300 hover:text-emerald-500 hover:bg-emerald-50"
-                  }`}
-                  title={active ? "Désactiver la ferme" : "Activer la ferme"}
-                >
-                  {isToggling ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : active ? (
-                    <PowerOff className="w-4 h-4" />
-                  ) : (
-                    <Power className="w-4 h-4" />
-                  )}
-                </button>
-
-                {/* Delete button */}
-                <button
-                  onClick={() => setDeleteTarget(farm as Farm)}
-                  className="absolute top-4 right-12 p-2 rounded-xl text-slate-300 hover:text-red-500 hover:bg-red-50 transition-colors opacity-0 group-hover:opacity-100"
-                  title="Supprimer la ferme"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-
+                {/* Nav arrow - always visible */}
                 <Link href={`/farms/${farm.id}`} className="absolute top-4 right-4 p-2 rounded-xl bg-emerald-50 text-emerald-600 hover:bg-emerald-100 hover:text-emerald-700 transition-colors" title="Gérer les bâtiments">
                   <ChevronRight className="w-5 h-5" />
                 </Link>
 
+                {/* Header */}
                 <div className="flex items-start gap-3 mb-4">
                   <div className={`w-12 h-12 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0 ${active ? "bg-emerald-50 text-primary" : "bg-slate-100 text-slate-400"}`}>
                     <Tractor className="w-6 h-6" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-slate-900 pr-24">{farm.name}</h3>
+                    <h3 className="text-xl font-bold text-slate-900 pr-12">{farm.name}</h3>
                     {active ? (
                       <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 mt-1">
                         <CheckCircle className="w-3 h-3" /> Active
@@ -133,6 +106,7 @@ export default function Farms() {
                   </div>
                 </div>
 
+                {/* Info */}
                 <div className="space-y-2">
                   <div className="flex items-center gap-3 text-slate-600 text-sm">
                     <MapPin className="w-4 h-4 text-slate-400" />
@@ -144,7 +118,9 @@ export default function Farms() {
                   </div>
                 </div>
 
-                <div className="mt-6 pt-4 border-t border-slate-100 space-y-4">
+                {/* Footer */}
+                <div className="mt-5 pt-4 border-t border-slate-100 space-y-3">
+                  {/* Stats */}
                   <div className="flex justify-between items-center">
                     <div className="text-center">
                       <p className="text-2xl font-bold text-slate-800">{farm.buildingsCount}</p>
@@ -155,6 +131,8 @@ export default function Farms() {
                       <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Lots en cours</p>
                     </div>
                   </div>
+
+                  {/* Main CTA */}
                   <Link
                     href={`/farms/${farm.id}`}
                     className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold transition-all hover:shadow-md"
@@ -162,6 +140,33 @@ export default function Farms() {
                     Gérer les bâtiments
                     <ChevronRight className="w-4 h-4" />
                   </Link>
+
+                  {/* Secondary actions - always visible */}
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleToggleActive(farm as Farm)}
+                      disabled={isToggling}
+                      className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold border transition-colors disabled:opacity-50 ${
+                        active
+                          ? "border-amber-200 text-amber-700 bg-amber-50 hover:bg-amber-100"
+                          : "border-emerald-200 text-emerald-700 bg-emerald-50 hover:bg-emerald-100"
+                      }`}
+                    >
+                      {isToggling ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : active ? (
+                        <><PowerOff className="w-3.5 h-3.5" /> Désactiver</>
+                      ) : (
+                        <><Power className="w-3.5 h-3.5" /> Activer</>
+                      )}
+                    </button>
+                    <button
+                      onClick={() => setDeleteTarget(farm as Farm)}
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold border border-red-200 text-red-600 bg-red-50 hover:bg-red-100 transition-colors"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" /> Supprimer
+                    </button>
+                  </div>
                 </div>
               </div>
             );
