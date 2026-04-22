@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { randomUUID } from "crypto";
-import { eq, and, isNull, count, sum } from "drizzle-orm";
+import { eq, and, isNull, count, sum, desc } from "drizzle-orm";
 import { db } from "@workspace/db";
 import { salesTable, batchesTable, customersTable } from "@workspace/db";
 import { recalcBatchCurrentCount } from "../lib/batch-utils";
@@ -61,6 +61,7 @@ router.get(
       .leftJoin(batchesTable, eq(salesTable.batchId, batchesTable.id))
       .leftJoin(customersTable, eq(salesTable.customerId, customersTable.id))
       .where(and(...conditions))
+      .orderBy(desc(salesTable.saleDate))
       .limit(limit)
       .offset(offset);
 
@@ -91,6 +92,7 @@ router.post(
     const totalAmount = parsed.data.quantity * parsed.data.unitPrice;
 
     let farmId: string | null = null;
+    const isAnimalSale = parsed.data.type === "ANIMAUX";
 
     if (parsed.data.batchId) {
       const [batch] = await db
@@ -102,16 +104,20 @@ router.post(
         res.status(404).json({ message: "Lot introuvable" });
         return;
       }
-      if (batch.currentCount <= 0) {
-        res.status(400).json({ message: "Ce lot est épuisé, aucune vente ne peut être enregistrée." });
-        return;
+
+      if (isAnimalSale) {
+        if (batch.currentCount <= 0) {
+          res.status(400).json({ message: "Ce lot est épuisé, aucune vente ne peut être enregistrée." });
+          return;
+        }
+        if (parsed.data.quantity > batch.currentCount) {
+          res.status(400).json({
+            message: `Quantité insuffisante. Ce lot ne dispose que de ${batch.currentCount} animaux disponibles.`,
+          });
+          return;
+        }
       }
-      if (parsed.data.quantity > batch.currentCount) {
-        res.status(400).json({
-          message: `Quantité insuffisante. Ce lot ne dispose que de ${batch.currentCount} animaux disponibles.`,
-        });
-        return;
-      }
+
       farmId = batch.farmId;
     }
 
@@ -126,7 +132,7 @@ router.post(
       } as any)
       .returning();
 
-    if (sale.batchId) {
+    if (sale.batchId && isAnimalSale) {
       await recalcBatchCurrentCount(sale.batchId);
     }
 
@@ -160,7 +166,7 @@ router.put(
       .returning();
     if (!updated) { res.status(404).json({ message: "Vente introuvable" }); return; }
 
-    if (existing.batchId) {
+    if (existing.batchId && existing.type === "ANIMAUX") {
       await recalcBatchCurrentCount(existing.batchId);
     }
 
@@ -189,7 +195,7 @@ router.delete(
       .returning();
     if (!deleted) { res.status(404).json({ message: "Vente introuvable" }); return; }
 
-    if (existing.batchId) {
+    if (existing.batchId && existing.type === "ANIMAUX") {
       await recalcBatchCurrentCount(existing.batchId);
     }
 

@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { randomUUID } from "crypto";
-import { eq, and, isNull, count, sum } from "drizzle-orm";
+import { eq, and, isNull, count, sum, desc } from "drizzle-orm";
 import { db } from "@workspace/db";
 import { expensesTable, farmsTable } from "@workspace/db";
 import {
@@ -55,7 +55,7 @@ router.get(
       .from(expensesTable)
       .leftJoin(farmsTable, eq(expensesTable.farmId, farmsTable.id))
       .where(and(...conditions))
-      .orderBy(expensesTable.date)
+      .orderBy(desc(expensesTable.date))
       .limit(limit)
       .offset(offset);
 
