@@ -109,7 +109,7 @@ export default function Users() {
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {usersData?.data.map((user) => {
-                  const isSelf = user.id === currentUser?.userId;
+                  const isSelf = user.id === currentUser?.id;
                   return (
                     <tr key={user.id} className={`hover:bg-slate-50/50 transition-colors ${!user.isActive ? "opacity-60" : ""}`}>
                       <td className="px-6 py-4">

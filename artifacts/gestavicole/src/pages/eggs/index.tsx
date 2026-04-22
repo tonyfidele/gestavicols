@@ -144,7 +144,7 @@ export default function Eggs() {
     const totalNet = totalCollected - totalBroken;
     const totalSold = records.reduce((s, r) => s + r.soldEggs, 0);
     const totalStock = records.reduce((s, r) => s + r.stockEggs, 0);
-    const totalCaisse = records.reduce((s, r) => s + r.caisseAmount, 0);
+    const totalCaisse = records.reduce((s, r) => s + (r.caisseAmount ?? 0), 0);
     return { totalCollected, totalBroken, totalNet, totalSold, totalStock, totalCaisse };
   }, [eggsData]);
 
@@ -235,7 +235,7 @@ export default function Eggs() {
                       <td className="px-5 py-4 text-amber-700">{record.stockEggs.toLocaleString()}</td>
                       <td className="px-5 py-4 text-slate-600">{record.cratesCount > 0 ? record.cratesCount : "—"}</td>
                       <td className="px-5 py-4 font-semibold text-purple-700">
-                        {record.caisseAmount > 0 ? fmtFcfa(record.caisseAmount) : "—"}
+                        {(record.caisseAmount ?? 0) > 0 ? fmtFcfa(record.caisseAmount ?? 0) : "—"}
                       </td>
                       {canWrite && (
                         <td className="px-5 py-4 text-right">

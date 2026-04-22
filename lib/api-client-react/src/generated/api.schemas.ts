@@ -209,6 +209,7 @@ export interface CreateDailyRecordRequest {
   averageWeight?: number;
   temperature?: number;
   notes?: string;
+  recordedBy?: string;
 }
 
 export interface DailyRecordListResponse {
@@ -220,6 +221,8 @@ export interface Sale {
   id: string;
   batchId?: string | null;
   batchName?: string | null;
+  customerId?: string | null;
+  customerName?: string | null;
   quantity: number;
   unitPrice: number;
   totalAmount: number;
@@ -365,6 +368,7 @@ export interface CreateVeterinaryRecordRequest {
   medication?: string;
   dosage?: string;
   nextVisit?: string;
+  veterinarianName?: string;
 }
 
 export interface VeterinaryRecordListResponse {
@@ -386,6 +390,7 @@ export interface DashboardStats {
   totalBatches: number;
   activeBatches: number;
   totalAnimals: number;
+  totalAnimalsSold: number;
   monthlyRevenue: number;
   monthlyExpenses: number;
   netProfit: number;
@@ -601,13 +606,17 @@ export interface ToggleUserActiveResponse {
 export interface EggProduction {
   id: string;
   batchId: string;
+  batchName?: string | null;
   farmId: string;
+  farmName?: string | null;
   date: string;
   eggsCollected: number;
   brokenEggs: number;
   soldEggs: number;
   stockEggs: number;
   cratesCount: number;
+  unitPrice?: number;
+  caisseAmount?: number;
   notes?: string;
   createdAt?: string;
 }
@@ -629,6 +638,7 @@ export interface EggProductionListResponse {
   total: number;
   page: number;
   limit: number;
+  totalEggs?: number;
 }
 
 export type ListUsersParams = {
@@ -652,6 +662,8 @@ export type ListBatchesParams = {
 export type ListDailyRecordsParams = {
   startDate?: string;
   endDate?: string;
+  page?: number;
+  limit?: number;
 };
 
 export type ListSalesParams = {

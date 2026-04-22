@@ -255,7 +255,7 @@ export function exportToPDF(
     margin: { left: 14, right: 14 },
   });
 
-  const pageCount = (doc.internal as { getNumberOfPages: () => number }).getNumberOfPages();
+  const pageCount = (doc.internal as unknown as { getNumberOfPages: () => number }).getNumberOfPages();
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
     doc.setFontSize(8);
