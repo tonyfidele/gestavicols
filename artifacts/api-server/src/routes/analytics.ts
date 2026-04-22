@@ -99,6 +99,7 @@ router.get(
       .select({
         farmId: salesTable.farmId,
         revenue: sum(salesTable.totalAmount),
+        totalSold: sum(salesTable.quantity),
       })
       .from(salesTable)
       .where(and(...farmRevenueConditions))
@@ -173,6 +174,7 @@ router.get(
         const exp = expensesByFarm.find(e => e.farmId === f.farmId);
         const revenue = Number(rev?.revenue) || 0;
         const expenses = Number(exp?.expenses) || 0;
+        const totalSold = Number(rev?.totalSold) || 0;
         return {
           farmId: f.farmId,
           farmName: f.farmName,
@@ -183,6 +185,7 @@ router.get(
           revenue,
           expenses,
           netProfit: revenue - expenses,
+          totalSold,
         };
       }),
       monthlySales: monthlySales.map(m => ({

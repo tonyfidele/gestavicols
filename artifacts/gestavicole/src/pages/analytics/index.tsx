@@ -384,7 +384,7 @@ export default function Analytics() {
                                 <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${farm.isActive === false ? "bg-slate-100 text-slate-500" : "bg-emerald-100 text-emerald-700"}`}>
                                   {farm.isActive === false ? "Désactivée" : "Active"}
                                 </span>
-                                <span className="text-xs text-slate-500">{farm.activeBatches} lots · {farm.totalAnimals.toLocaleString()} animaux</span>
+                                <span className="text-xs text-slate-500">{farm.activeBatches} lots · {farm.totalAnimals.toLocaleString()} animaux · <span className="text-orange-600 font-medium">{farm.totalSold.toLocaleString()} vendus</span></span>
                               </div>
                             </div>
                           </div>
