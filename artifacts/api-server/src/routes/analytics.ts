@@ -77,7 +77,8 @@ router.get(
         batchesTable,
         and(
           eq(batchesTable.farmId, farmsTable.id),
-          ne(batchesTable.status, "TERMINE")
+          ne(batchesTable.status, "TERMINE"),
+          isNull(batchesTable.deletedAt)
         )
       )
       .where(
