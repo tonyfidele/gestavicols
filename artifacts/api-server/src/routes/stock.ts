@@ -83,7 +83,7 @@ router.post(
         id: randomUUID(),
         tenantId: user.tenantId,
         ...parsed.data,
-      })
+      } as any)
       .returning();
 
     await logAudit(user, "CREATE_STOCK", "STOCK", item.id, `Created stock item ${item.name}`);
@@ -97,13 +97,13 @@ router.put(
   requireAuth,
   requirePermission("STOCK", "UPDATE"),
   async (req, res): Promise<void> => {
-    const { stockId } = req.params;
+    const stockId = req.params.stockId as string;
     const user = req.user!;
     const parsed = CreateStockItemBody.safeParse(req.body);
     if (!parsed.success) { res.status(400).json({ message: parsed.error.message }); return; }
     const conditions = [eq(stockTable.id, stockId), isNull(stockTable.deletedAt)];
     if (user.role !== "SUPER_ADMIN") conditions.push(eq(stockTable.tenantId, user.tenantId));
-    const [updated] = await db.update(stockTable).set(parsed.data).where(and(...conditions)).returning();
+    const [updated] = await db.update(stockTable).set(parsed.data as any).where(and(...conditions)).returning();
     if (!updated) { res.status(404).json({ message: "Article introuvable" }); return; }
     await logAudit(user, "UPDATE_STOCK", "STOCK", updated.id);
     res.json({ ...updated, currentValue: updated.quantity * updated.unitPrice });
@@ -115,7 +115,7 @@ router.delete(
   requireAuth,
   requirePermission("STOCK", "DELETE"),
   async (req, res): Promise<void> => {
-    const { stockId } = req.params;
+    const stockId = req.params.stockId as string;
     const user = req.user!;
     const conditions = [eq(stockTable.id, stockId), isNull(stockTable.deletedAt)];
     if (user.role !== "SUPER_ADMIN") conditions.push(eq(stockTable.tenantId, user.tenantId));

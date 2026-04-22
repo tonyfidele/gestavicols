@@ -322,7 +322,7 @@ router.patch(
   requireAuth,
   requirePermission("FARM", "UPDATE"),
   async (req, res): Promise<void> => {
-    const { farmId } = req.params;
+    const farmId = req.params.farmId as string;
     const user = req.user!;
     const conditions = [eq(farmsTable.id, farmId), isNull(farmsTable.deletedAt)];
     if (user.role !== "SUPER_ADMIN") conditions.push(eq(farmsTable.tenantId, user.tenantId));
@@ -421,7 +421,7 @@ router.post(
 
     const [building] = await db
       .insert(buildingsTable)
-      .values({ id: randomUUID(), farmId: params.data.farmId, tenantId: user.tenantId, ...parsed.data })
+      .values({ id: randomUUID(), farmId: params.data.farmId, tenantId: user.tenantId, ...parsed.data } as any)
       .returning();
 
     await logAudit(user, "CREATE_BUILDING", "BUILDING", building.id);

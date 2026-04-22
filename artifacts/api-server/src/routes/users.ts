@@ -36,7 +36,7 @@ router.get(
 
     const conditions = [isNull(usersTable.deletedAt)];
     if (tenantFilter.tenantId) {
-      conditions.push(eq(usersTable.tenantId, tenantFilter.tenantId));
+      conditions.push(eq(usersTable.tenantId, tenantFilter.tenantId as string));
     }
 
     const [totalResult] = await db
@@ -257,7 +257,7 @@ router.patch(
   requireAuth,
   requirePermission("USER", "UPDATE"),
   async (req, res): Promise<void> => {
-    const { userId } = req.params;
+    const userId = req.params.userId as string;
     const user = req.user!;
     if (userId === user.userId) { res.status(400).json({ message: "Impossible de modifier votre propre compte" }); return; }
     const conditions = [eq(usersTable.id, userId), isNull(usersTable.deletedAt)];

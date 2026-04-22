@@ -235,7 +235,7 @@ router.delete(
   requireAuth,
   requirePermission("BATCH", "DELETE"),
   async (req, res): Promise<void> => {
-    const { batchId } = req.params;
+    const batchId = req.params.batchId as string;
     const user = req.user!;
     const conditions = [eq(batchesTable.id, batchId), isNull(batchesTable.deletedAt)];
     if (user.role !== "SUPER_ADMIN") conditions.push(eq(batchesTable.tenantId, user.tenantId));
@@ -453,7 +453,7 @@ router.post(
         tenantId: user.tenantId,
         veterinarianName: user.name,
         ...parsed.data,
-      })
+      } as any)
       .returning();
 
     await logAudit(user, "CREATE_VET_RECORD", "VET_RECORD", record.id);
@@ -468,7 +468,8 @@ router.delete(
   requirePermission("VET_RECORD", "DELETE"),
   async (req, res): Promise<void> => {
     const user = req.user!;
-    const { batchId, recordId } = req.params;
+    const batchId = req.params.batchId as string;
+    const recordId = req.params.recordId as string;
 
     const batchConds = [eq(batchesTable.id, batchId), isNull(batchesTable.deletedAt)];
     if (user.role !== "SUPER_ADMIN") batchConds.push(eq(batchesTable.tenantId, user.tenantId));
@@ -503,7 +504,7 @@ router.delete(
   requireAuth,
   requirePermission("STOCK", "DELETE"),
   async (req, res): Promise<void> => {
-    const { batchId } = req.params;
+    const batchId = req.params.batchId as string;
     const user = req.user!;
 
     const batchConds = [eq(batchesTable.id, batchId), isNull(batchesTable.deletedAt)];

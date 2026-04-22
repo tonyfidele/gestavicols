@@ -431,6 +431,7 @@ export const UpdateBatchBody = zod.object({
   status: zod.enum(["ACTIF", "TERMINE", "EN_ATTENTE"]).optional(),
   startDate: zod.string().optional(),
   endDate: zod.string().optional(),
+  initialCount: zod.number().optional(),
 });
 
 export const UpdateBatchResponse = zod.object({

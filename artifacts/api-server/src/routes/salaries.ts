@@ -163,7 +163,7 @@ router.delete(
   requireAuth,
   requirePermission("SALARY", "DELETE"),
   async (req, res): Promise<void> => {
-    const { salaryId } = req.params;
+    const salaryId = req.params.salaryId as string;
     const user = req.user!;
     const [deleted] = await db
       .delete(salariesTable)

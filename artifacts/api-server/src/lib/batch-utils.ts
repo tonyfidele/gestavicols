@@ -1,4 +1,4 @@
-import { eq, sum, isNull } from "drizzle-orm";
+import { and, eq, sum, isNull } from "drizzle-orm";
 import { db } from "@workspace/db";
 import { batchesTable, dailyRecordsTable, salesTable } from "@workspace/db";
 
@@ -21,7 +21,7 @@ export async function recalcBatchCurrentCount(batchId: string): Promise<void> {
   const [salesAgg] = await db
     .select({ total: sum(salesTable.quantity) })
     .from(salesTable)
-    .where(eq(salesTable.batchId, batchId), isNull(salesTable.deletedAt));
+    .where(and(eq(salesTable.batchId, batchId), isNull(salesTable.deletedAt)));
 
   const totalMortality = Number(mortalityAgg?.total ?? 0);
   const totalSold = Number(salesAgg?.total ?? 0);

@@ -123,7 +123,7 @@ router.post(
         totalAmount,
         farmId,
         ...parsed.data,
-      })
+      } as any)
       .returning();
 
     if (sale.batchId) {
@@ -141,7 +141,7 @@ router.put(
   requireAuth,
   requirePermission("SALE", "UPDATE"),
   async (req, res): Promise<void> => {
-    const { saleId } = req.params;
+    const saleId = req.params.saleId as string;
     const user = req.user!;
     const parsed = CreateSaleBody.safeParse(req.body);
     if (!parsed.success) { res.status(400).json({ message: parsed.error.message }); return; }
@@ -155,7 +155,7 @@ router.put(
     const totalAmount = parsed.data.quantity * parsed.data.unitPrice;
     const [updated] = await db
       .update(salesTable)
-      .set({ ...parsed.data, totalAmount })
+      .set({ ...parsed.data, totalAmount } as any)
       .where(and(...conditions))
       .returning();
     if (!updated) { res.status(404).json({ message: "Vente introuvable" }); return; }
@@ -174,7 +174,7 @@ router.delete(
   requireAuth,
   requirePermission("SALE", "DELETE"),
   async (req, res): Promise<void> => {
-    const { saleId } = req.params;
+    const saleId = req.params.saleId as string;
     const user = req.user!;
     const conditions = [eq(salesTable.id, saleId), isNull(salesTable.deletedAt)];
     if (user.role !== "SUPER_ADMIN") conditions.push(eq(salesTable.tenantId, user.tenantId));

@@ -115,13 +115,13 @@ router.put(
   requireAuth,
   requirePermission("BATCH", "UPDATE"),
   async (req, res): Promise<void> => {
-    const { eggId } = req.params;
+    const eggId = req.params.eggId as string;
     const user = req.user!;
     const parsed = CreateEggProductionBody.safeParse(req.body);
     if (!parsed.success) { res.status(400).json({ message: parsed.error.message }); return; }
     const conditions = [eq(eggProductionsTable.id, eggId)];
     if (user.role !== "SUPER_ADMIN") conditions.push(eq(eggProductionsTable.tenantId, user.tenantId));
-    const [updated] = await db.update(eggProductionsTable).set(parsed.data).where(and(...conditions)).returning();
+    const [updated] = await db.update(eggProductionsTable).set(parsed.data as any).where(and(...conditions)).returning();
     if (!updated) { res.status(404).json({ message: "Enregistrement introuvable" }); return; }
     await logAudit(user, "UPDATE_EGG_RECORD", "EGG", updated.id);
     res.json({ ...updated, batchName: null, farmName: null });
@@ -133,7 +133,7 @@ router.delete(
   requireAuth,
   requirePermission("BATCH", "DELETE"),
   async (req, res): Promise<void> => {
-    const { eggId } = req.params;
+    const eggId = req.params.eggId as string;
     const user = req.user!;
     const conditions = [eq(eggProductionsTable.id, eggId)];
     if (user.role !== "SUPER_ADMIN") conditions.push(eq(eggProductionsTable.tenantId, user.tenantId));

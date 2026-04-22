@@ -90,7 +90,7 @@ router.post(
         id: randomUUID(),
         tenantId: user.tenantId,
         ...parsed.data,
-      })
+      } as any)
       .returning();
 
     await logAudit(user, "CREATE_EXPENSE", "EXPENSE", expense.id, `Expense: ${expense.description} ${expense.amount}`);
@@ -104,13 +104,13 @@ router.put(
   requireAuth,
   requirePermission("EXPENSE", "UPDATE"),
   async (req, res): Promise<void> => {
-    const { expenseId } = req.params;
+    const expenseId = req.params.expenseId as string;
     const user = req.user!;
     const parsed = CreateExpenseBody.safeParse(req.body);
     if (!parsed.success) { res.status(400).json({ message: parsed.error.message }); return; }
     const conditions = [eq(expensesTable.id, expenseId), isNull(expensesTable.deletedAt)];
     if (user.role !== "SUPER_ADMIN") conditions.push(eq(expensesTable.tenantId, user.tenantId));
-    const [updated] = await db.update(expensesTable).set(parsed.data).where(and(...conditions)).returning();
+    const [updated] = await db.update(expensesTable).set(parsed.data as any).where(and(...conditions)).returning();
     if (!updated) { res.status(404).json({ message: "Dépense introuvable" }); return; }
     await logAudit(user, "UPDATE_EXPENSE", "EXPENSE", updated.id);
     res.json(updated);
@@ -122,7 +122,7 @@ router.delete(
   requireAuth,
   requirePermission("EXPENSE", "DELETE"),
   async (req, res): Promise<void> => {
-    const { expenseId } = req.params;
+    const expenseId = req.params.expenseId as string;
     const user = req.user!;
     const conditions = [eq(expensesTable.id, expenseId), isNull(expensesTable.deletedAt)];
     if (user.role !== "SUPER_ADMIN") conditions.push(eq(expensesTable.tenantId, user.tenantId));
