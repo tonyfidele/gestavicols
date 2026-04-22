@@ -111,8 +111,8 @@ export default function Farms() {
                   <Trash2 className="w-4 h-4" />
                 </button>
 
-                <Link href={`/farms/${farm.id}`} className="absolute top-4 right-4 p-2 rounded-xl text-slate-300 hover:text-primary hover:bg-emerald-50 transition-colors" title="Voir le détail">
-                  <ChevronRight className="w-4 h-4" />
+                <Link href={`/farms/${farm.id}`} className="absolute top-4 right-4 p-2 rounded-xl bg-emerald-50 text-emerald-600 hover:bg-emerald-100 hover:text-emerald-700 transition-colors" title="Gérer les bâtiments">
+                  <ChevronRight className="w-5 h-5" />
                 </Link>
 
                 <div className="flex items-start gap-3 mb-4">
@@ -144,15 +144,24 @@ export default function Farms() {
                   </div>
                 </div>
 
-                <div className="mt-6 pt-6 border-t border-slate-100 flex justify-between items-center">
-                  <div className="text-center">
-                    <p className="text-2xl font-bold text-slate-800">{farm.buildingsCount}</p>
-                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Bâtiments</p>
+                <div className="mt-6 pt-4 border-t border-slate-100 space-y-4">
+                  <div className="flex justify-between items-center">
+                    <div className="text-center">
+                      <p className="text-2xl font-bold text-slate-800">{farm.buildingsCount}</p>
+                      <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Bâtiments</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-2xl font-bold text-indigo-600">{farm.activeBatchesCount}</p>
+                      <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Lots en cours</p>
+                    </div>
                   </div>
-                  <div className="text-center">
-                    <p className="text-2xl font-bold text-indigo-600">{farm.activeBatchesCount}</p>
-                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Lots en cours</p>
-                  </div>
+                  <Link
+                    href={`/farms/${farm.id}`}
+                    className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold transition-all hover:shadow-md"
+                  >
+                    Gérer les bâtiments
+                    <ChevronRight className="w-4 h-4" />
+                  </Link>
                 </div>
               </div>
             );
