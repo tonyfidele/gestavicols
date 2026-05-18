@@ -10,7 +10,7 @@
   "scripts": {
     "push": "drizzle-kit push --config ./drizzle.config.ts",
     "push-force": "drizzle-kit push --force --config ./drizzle.config.ts",
-    "preinstall": "node -e \"console.log('skip')\""
+   "preinstall": "node -e \"try { require('fs').unlinkSync('package-lock.json') } catch(e) {} try { require('fs').unlinkSync('yarn.lock') } catch(e) {}\""
   },
   "dependencies": {
     "drizzle-orm": "catalog:",

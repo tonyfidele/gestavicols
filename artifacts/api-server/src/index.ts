@@ -2,22 +2,9 @@ import "dotenv/config";
 import app from "./app";
 import { logger } from "./lib/logger";
 import { db } from "@workspace/db";
-import { batchesTable, salesTable } from "@workspace/db";
-import { eq, isNull, sql } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 
-const rawPort = process.env["PORT"];
-
-if (!rawPort) {
-  throw new Error(
-    "PORT environment variable is required but was not provided.",
-  );
-}
-
-const port = Number(rawPort);
-
-if (Number.isNaN(port) || port <= 0) {
-  throw new Error(`Invalid PORT value: "${rawPort}"`);
-}
+const port = Number(process.env.PORT || 3000);
 
 async function fixBatchCurrentCounts() {
   try {
@@ -27,7 +14,7 @@ async function fixBatchCurrentCounts() {
         current_count = GREATEST(0,
           b.initial_count
           - COALESCE((SELECT SUM(dr.mortality) FROM daily_records dr WHERE dr.batch_id = b.id), 0)
-          - COALESCE((SELECT SUM(s.quantity)   FROM sales s WHERE s.batch_id = b.id AND s.deleted_at IS NULL), 0)
+          - COALESCE((SELECT SUM(s.quantity) FROM sales s WHERE s.batch_id = b.id AND s.deleted_at IS NULL), 0)
         ),
         mortality_rate = CASE
           WHEN b.initial_count > 0 THEN
@@ -36,18 +23,18 @@ async function fixBatchCurrentCounts() {
         END
       WHERE b.deleted_at IS NULL
     `);
-    logger.info({ rowCount: result.rowCount }, "Batch current counts corrected from mortality + sales history");
+
+    logger.info(
+      { rowCount: result.rowCount },
+      "Batch current counts corrected from mortality + sales history"
+    );
   } catch (err) {
     logger.warn({ err }, "Could not auto-correct batch current counts on startup");
   }
 }
 
-app.listen(port, async (err) => {
-  if (err) {
-    logger.error({ err }, "Error listening on port");
-    process.exit(1);
-  }
-
+app.listen(port, () => {
   logger.info({ port }, "Server listening");
-  await fixBatchCurrentCounts();
+
+  void fixBatchCurrentCounts();
 });

@@ -1,35 +1,49 @@
 import "dotenv/config";
-import express, { type Express } from "express";
-import cors from "cors";
-import pinoHttp from "pino-http";
-import router from "./routes";
+import app from "./app";
 import { logger } from "./lib/logger";
+import { db } from "@workspace/db";
+import { sql } from "drizzle-orm";
 
-const app: Express = express();
 
+const port = Number(process.env.PORT) || 3000;
+
+async function fixBatchCurrentCounts() {
+  try {
+    const result = await db.execute(sql`
+      UPDATE batches b
+      SET
+        current_count = GREATEST(0,
+          b.initial_count
+          - COALESCE((SELECT SUM(dr.mortality) FROM daily_records dr WHERE dr.batch_id = b.id), 0)
+          - COALESCE((SELECT SUM(s.quantity) FROM sales s WHERE s.batch_id = b.id AND s.deleted_at IS NULL), 0)
+        ),
+        mortality_rate = CASE
+          WHEN b.initial_count > 0 THEN
+            COALESCE((SELECT SUM(dr.mortality) FROM daily_records dr WHERE dr.batch_id = b.id), 0)::float / b.initial_count * 100
+          ELSE 0
+        END
+      WHERE b.deleted_at IS NULL
+    `);
+
+    logger.info({ rowCount: result.rowCount }, "Batch corrected");
+  } catch (err) {
+    logger.warn({ err }, "Batch fix failed");
+  }
+}
+
+app.get("/health", (req, res) => {
+  res.json({ ok: true });
+});
 app.use(
-  pinoHttp({
-    logger,
-    serializers: {
-      req(req) {
-        return {
-          id: req.id,
-          method: req.method,
-          url: req.url?.split("?")[0],
-        };
-      },
-      res(res) {
-        return {
-          statusCode: res.statusCode,
-        };
-      },
-    },
-  }),
+  cors({
+    origin: [
+      "http://localhost:5173",
+      "https://ton-front.vercel.app"
+    ],
+    credentials: true,
+  })
 );
-app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-app.use("/api", router);
-
-export default app;
+app.listen(port, async () => {
+  logger.info({ port }, "Server running");
+  await fixBatchCurrentCounts();
+});
